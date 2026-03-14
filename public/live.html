@@ -177,6 +177,7 @@
 
         // =========================================
         // HELPER: Box to X/Y (12 cols x 8 rows = 96, or 8x4=32)
+        // Data is always L2R standardized. X is 0-indexed column, Y is 0-indexed row.
         // =========================================
         function boxToXY(box, isFutsal = false) {
             const rows = isFutsal ? 4 : 8;
@@ -184,20 +185,49 @@
             return { col: Math.floor(b / rows), row: b % rows };
         }
 
+        // Spatial Helpers (L2R normalized)
+        const isInAttackingThird = (locBox, isFutsal) => {
+            if (!locBox) return false;
+            const { col } = boxToXY(locBox, isFutsal);
+            const cols = isFutsal ? 8 : 12;
+            return col >= cols - 3; 
+        };
+
+        const isInPenaltyBox = (locBox, isFutsal) => {
+            if (!locBox) return false;
+            const { col, row } = boxToXY(locBox, isFutsal);
+            const cols = isFutsal ? 8 : 12;
+            return col === (cols - 1) && row >= 2 && row <= 5; // Simplified box for L2R normalized grid
+        };
+
+        const isProgressive = (startBox, endBox, isFutsal) => {
+            if (!startBox || !endBox) return false;
+            const startNode = boxToXY(startBox, isFutsal);
+            const endNode = boxToXY(endBox, isFutsal);
+            // Must move forward by at least 2 columns
+            return endNode.col >= startNode.col + 2;
+        };
+
         // =========================================
         // STATS CALCULATOR
         // =========================================
         function computeStats(events, match) {
             const init = () => ({
                 goals: 0, shots: 0, sot: 0,
-                pass_total: 0, pass_success: 0,
-                tackles: 0, tackle_success: 0,
+                pass_total: 0, pass_success: 0, key_passes: 0,
+                tackles: 0, tackle_success: 0, interceptions: 0,
                 dribble_total: 0, dribble_success: 0,
                 fouls: 0, yellow: 0, red: 0,
                 carry: 0, own_goals: 0,
                 corner_goals: 0, fk_goals: 0, penalty_goals: 0,
                 events_count: 0,
                 heatmap: {},
+                // Advanced Math
+                progressive_actions: 0,
+                final_third_entries: 0,
+                box_entries: 0,
+                defensive_actions: 0,
+                final_third_passes: 0,
             });
 
             let home = init(), away = init();
@@ -225,11 +255,26 @@
                     momentumBins[bin][isHome ? 'home' : 'away']++;
                 }
 
+                // Advanced Base Parsing
+                const endBox = ev.end_location_box;
+                const startBox = ev.location_box;
+                
+                const enteredFinalThird = !isInAttackingThird(startBox, match.is_futsal) && isInAttackingThird(endBox, match.is_futsal);
+                const enteredPenaltyBox = !isInPenaltyBox(startBox, match.is_futsal) && isInPenaltyBox(endBox, match.is_futsal);
+                const isProgressiveAction = isProgressive(startBox, endBox, match.is_futsal);
+
                 // Action-based stats
                 switch (ev.action) {
                     case 'Pass':
                         t.pass_total++;
-                        if (ev.outcome === 'Successful' || ev.outcome === 'Assist') t.pass_success++;
+                        if (ev.outcome === 'Successful' || ev.outcome === 'Assist') {
+                            t.pass_success++;
+                            if (ev.type === 'Key Pass') t.key_passes++;
+                            if (isInAttackingThird(endBox, match.is_futsal)) t.final_third_passes++;
+                            if (enteredFinalThird) t.final_third_entries++;
+                            if (enteredPenaltyBox) t.box_entries++;
+                            if (isProgressiveAction) t.progressive_actions++;
+                        }
                         if (ev.outcome === 'Assist') {
                             keyEvents.push({ ...ev, display: 'Assist', emoji: '👟', isHome });
                         }
@@ -248,22 +293,32 @@
                     case 'Tackle':
                         t.tackles++;
                         if (ev.outcome === 'Successful') t.tackle_success++;
-                        if (ev.outcome === 'Foul') t.fouls++;
-                        if (ev.outcome === 'Yellow') {
-                            t.yellow++;
-                            keyEvents.push({ ...ev, display: 'Yellow Card', emoji: '🟨', isHome });
-                        }
-                        if (ev.outcome === 'Red') {
-                            t.red++;
-                            keyEvents.push({ ...ev, display: 'Red Card', emoji: '🟥', isHome });
-                        }
+                        t.defensive_actions++;
                         break;
+                    case 'Interception':
+                        t.interceptions++;
+                        t.defensive_actions++;
+                        break;
+                    case 'Foul':
+                         // Usually fouls are outcome, but if tagged as action
+                         t.defensive_actions++;
+                         break;
                     case 'Carry':
                         t.carry++;
+                        if (ev.outcome === 'Successful') {
+                            if (enteredFinalThird) t.final_third_entries++;
+                            if (enteredPenaltyBox) t.box_entries++;
+                            if (isProgressiveAction) t.progressive_actions++;
+                        }
                         break;
                     case 'Dribble':
                         t.dribble_total++;
-                        if (ev.outcome === 'Successful') t.dribble_success++;
+                        if (ev.outcome === 'Successful') {
+                            t.dribble_success++;
+                            if (enteredFinalThird) t.final_third_entries++;
+                            if (enteredPenaltyBox) t.box_entries++;
+                            if (isProgressiveAction) t.progressive_actions++;
+                        }
                         break;
                     case 'Own Goal':
                         t.own_goals++;
@@ -272,6 +327,20 @@
                         else home.goals++;
                         keyEvents.push({ ...ev, display: 'Own Goal', emoji: '🔴', isHome });
                         break;
+                }
+
+                // Collect Def Actions cleanly via outcome properties 
+                if (ev.outcome === 'Foul') {
+                    t.fouls++;
+                    t.defensive_actions++;
+                }
+                if (ev.outcome === 'Yellow') {
+                    t.yellow++;
+                    keyEvents.push({ ...ev, display: 'Yellow Card', emoji: '🟨', isHome });
+                }
+                if (ev.outcome === 'Red') {
+                    t.red++;
+                    keyEvents.push({ ...ev, display: 'Red Card', emoji: '🟥', isHome });
                 }
             });
 
@@ -352,6 +421,16 @@
             hProb = Math.max(1, Math.min(99, Math.round(hProb)));
             aProb = 100 - hProb;
 
+            // PPDA: Home PPDA = Away Passes / Home Def Actions
+            // A lower PPDA indicates more aggressive pressing
+            const ppdaHomeStr = home.defensive_actions === 0 ? "15.0+" : (away.pass_total / home.defensive_actions).toFixed(1);
+            const ppdaAwayStr = away.defensive_actions === 0 ? "15.0+" : (home.pass_total / away.defensive_actions).toFixed(1);
+
+            // Field Tilt: Home Final Third Passes / Total Final Third Passes
+            const totalFtPasses = home.final_third_passes + away.final_third_passes;
+            const fieldTiltHome = pct(home.final_third_passes, totalFtPasses);
+            const fieldTiltAway = 100 - fieldTiltHome;
+
             return {
                 home, away, maxMinute, keyEvents, momentumData, possession,
                 passAccHome: pct(home.pass_success, home.pass_total),
@@ -364,6 +443,10 @@
                 dribbleAccAway: pct(away.dribble_success, away.dribble_total),
                 winProbHome: hProb, winProbAway: aProb,
                 isLive: match.status === 'Live',
+                // Advanced 
+                ppdaHome: parseFloat(ppdaHomeStr) || 0,
+                ppdaAway: parseFloat(ppdaAwayStr) || 0,
+                fieldTiltHome, fieldTiltAway
             };
         }
 
@@ -799,7 +882,7 @@
             const scoreA = stats.home.goals;
             const scoreB = stats.away.goals;
 
-            const tabs = ['overview', 'shots', 'heatmap', 'timeline', 'players'];
+            const tabs = ['overview', 'advanced', 'shots', 'heatmap', 'timeline', 'players'];
 
             return (
                 <div className="pb-12">
@@ -900,6 +983,46 @@
                             </div>
 
                             <MomentumChart data={stats.momentumData} teamAName={teamAName} teamBName={teamBName} />
+                        </div>
+                    )}
+
+                    {activeTab === 'advanced' && (
+                        <div>
+                            <div className="t-box t-shadow p-4 mb-4">
+                                <TugOfWar label="FIELD TILT" home={stats.fieldTiltHome} away={stats.fieldTiltAway} />
+                                
+                                {/* PPDA Custom Presentation (Lower is better) */}
+                                <div className="mb-4">
+                                    <div className="flex justify-between mb-1 text-xs font-black uppercase tracking-tight">
+                                        <span className="text-red">{stats.ppdaHome}</span>
+                                        <span className="text-muted tracking-widest">PPDA PRESS</span>
+                                        <span className="text-blue">{stats.ppdaAway}</span>
+                                    </div>
+                                    <div className="stat-track" style={{ background: 'transparent', border: 'none', gap: 4 }}>
+                                       <div style={{ flex: 1, background: 'var(--gray-200)', border: '1px solid #000', position: 'relative' }}>
+                                           <div className="stat-fill-red" style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: `${Math.min(100, (15 - Math.min(15, stats.ppdaHome))/15 * 100)}%` }}></div>
+                                       </div>
+                                       <div style={{ flex: 1, background: 'var(--gray-200)', border: '1px solid #000', position: 'relative' }}>
+                                            <div className="stat-fill-blue" style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${Math.min(100, (15 - Math.min(15, stats.ppdaAway))/15 * 100)}%`, borderLeft: 'none' }}></div>
+                                       </div>
+                                    </div>
+                                    <div className="text-center text-muted" style={{ fontSize: 9, marginTop: 4 }}>* Lower PPDA = Higher Pressing Intensity</div>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-2 gap-3 mb-4">
+                                <div className="t-box p-3">
+                                    <div className="text-xs font-black uppercase mb-2" style={{ borderBottom: '2px solid #000', paddingBottom: 4 }}>PROGRESSION</div>
+                                    <CompactStat label="PROG. ACTIONS" homeVal={stats.home.progressive_actions} awayVal={stats.away.progressive_actions} />
+                                    <CompactStat label="KEY PASSES" homeVal={stats.home.key_passes} awayVal={stats.away.key_passes} />
+                                </div>
+                                <div className="t-box p-3">
+                                    <div className="text-xs font-black uppercase mb-2" style={{ borderBottom: '2px solid #000', paddingBottom: 4 }}>TERRITORY</div>
+                                    <CompactStat label="FINAL 3RD ENTRIES" homeVal={stats.home.final_third_entries} awayVal={stats.away.final_third_entries} />
+                                    <CompactStat label="BOX ENTRIES" homeVal={stats.home.box_entries} awayVal={stats.away.box_entries} />
+                                </div>
+                            </div>
+
                         </div>
                     )}
 
