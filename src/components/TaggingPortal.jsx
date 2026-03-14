@@ -87,7 +87,7 @@ function PitchGrid({ isFutsal, selectedBox, onSelectBox, accentColor }) {
       {Array.from({ length: totalBoxes }, (_, i) => {
         const col = i % cols;
         const row = Math.floor(i / cols);
-        const boxNum = i + 1;
+        const boxNum = (col * rows) + row + 1; // Top-to-Bottom!
         const isSelected = selectedBox === boxNum;
 
         return (
@@ -108,15 +108,15 @@ function PitchGrid({ isFutsal, selectedBox, onSelectBox, accentColor }) {
       {Array.from({ length: totalBoxes }, (_, i) => {
         const col = i % cols;
         const row = Math.floor(i / cols);
-        const boxNum = i + 1;
+        const boxNum = (col * rows) + row + 1;
         return (
           <text
             key={`t${boxNum}`}
             x={col * boxW + boxW / 2}
             y={row * boxH + boxH / 2 + 3}
             textAnchor="middle"
-            fill="rgba(0,0,0,0.15)"
-            fontSize="9"
+            fill="rgba(0,0,0,0.6)"
+            fontSize="10"
             fontFamily="var(--font-mono)"
             fontWeight="700"
             style={{ pointerEvents: 'none' }}
@@ -422,12 +422,24 @@ export default function TaggingPortal({ match, teams, onEnd }) {
       return;
     }
 
+    const direction = getCurrentDirection();
+    let finalBox = selectedBox;
+
+    // Mirror the location box horizontally if the team is playing Right-to-Left!
+    if (direction === 'Right to Left' && selectedBox) {
+        const b = selectedBox - 1;
+        const col = Math.floor(b / rows);
+        const row = b % rows;
+        const mirroredCol = cols - 1 - col;
+        finalBox = (mirroredCol * rows) + row + 1;
+    }
+
     const eventPayload = {
       match_id: match.id,
       team_id: currentTeamId,
       half: currentHalf,
       action: selectedAction,
-      location_box: selectedBox,
+      location_box: finalBox,
       type: ACTIONS_WITH_TYPE.includes(selectedAction) ? selectedType : null,
       outcome: outcome,
       direction_of_attack: getCurrentDirection(),

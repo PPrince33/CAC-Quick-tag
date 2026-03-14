@@ -179,9 +179,9 @@
         // HELPER: Box to X/Y (12 cols x 8 rows = 96, or 8x4=32)
         // =========================================
         function boxToXY(box, isFutsal = false) {
-            const cols = isFutsal ? 8 : 12;
+            const rows = isFutsal ? 4 : 8;
             const b = box - 1;
-            return { col: b % cols, row: Math.floor(b / cols) };
+            return { col: Math.floor(b / rows), row: b % rows };
         }
 
         // =========================================
@@ -308,8 +308,7 @@
                     if (!locBox) return false;
                     const { col } = boxToXY(locBox, match.is_futsal);
                     const cols = match.is_futsal ? 8 : 12;
-                    if (isHome) return col >= cols - 3;
-                    return col <= 2;
+                    return col >= cols - 3; // Data is saved standardized to L2R
                 };
 
                 if (ev.outcome === 'Goal' && ev.action !== 'Own Goal') {
@@ -516,7 +515,7 @@
                             <rect x="0" y="0" width={vW} height={vH} fill="#fff" rx="2" stroke="#000" strokeWidth="2" />
                             {Array.from({length: totalBoxes}, (_, i) => {
                                 const box = i + 1;
-                                const col = i % cols, row = Math.floor(i / cols);
+                                const { col, row } = boxToXY(box, isFutsal);
                                 const count = counts[box] || 0;
                                 const intensity = count / maxCount;
                                 return (
