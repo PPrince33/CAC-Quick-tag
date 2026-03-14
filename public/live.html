@@ -293,12 +293,11 @@
 
             const pct = (n, d) => d === 0 ? 0 : Math.round((n / d) * 100);
 
-            // Win Probability Algorithm (Custom point system)
-            let hWin = 50.0;
-            let aWin = 50.0;
+            // Win Probability Algorithm (Zero-sum percentage shifting)
+            let hProb = 50.0;
+            let aProb = 50.0;
             const totalMins = match.is_futsal ? 40 : 90;
             const timePassed = Math.min(maxMinute, totalMins);
-            const timeFactor = timePassed / totalMins;
 
             events.forEach(ev => {
                 const isHome = ev.team_id === match.team_a_id;
@@ -317,7 +316,8 @@
                     shift = 10.0;
                 } else if (ev.action === 'Own Goal') {
                     // Own goal gives points to the OTHER team
-                    if (isHome) aWin += 10.0; else hWin += 10.0;
+                    if (isHome) aProb += 10.0, hProb -= 10.0; 
+                    else hProb += 10.0, aProb -= 10.0;
                 } else if (ev.outcome === 'Red') {
                     shift = -7.0; // penalizes the team
                 } else if (ev.action === 'Shot') {
@@ -329,27 +329,29 @@
                 }
 
                 if (shift !== 0) {
-                    if (isHome) hWin += shift;
-                    else aWin += shift;
+                    if (isHome) {
+                        hProb += shift;
+                        aProb -= shift;
+                    } else {
+                        aProb += shift;
+                        hProb -= shift;
+                    }
                 }
             });
 
             // Adjust for winning team over time (0.3% increase per minute winning)
             const diff = home.goals - away.goals;
-            if (diff > 0) hWin += (timePassed * 0.3);
-            else if (diff < 0) aWin += (timePassed * 0.3);
-
-            // Normalize into a clean sum to 100%
-            let hProb = Math.max(0, hWin);
-            let aProb = Math.max(0, aWin);
-            const totalProb = hProb + aProb;
-            
-            if (totalProb > 0) {
-                hProb = Math.round((hProb / totalProb) * 100);
-                aProb = 100 - hProb;
-            } else {
-                hProb = 50; aProb = 50;
+            if (diff > 0) {
+                hProb += (timePassed * 0.3);
+                aProb -= (timePassed * 0.3);
+            } else if (diff < 0) {
+                aProb += (timePassed * 0.3);
+                hProb -= (timePassed * 0.3);
             }
+
+            // Cap the percentages perfectly between 1 and 99 so it never breaks the UI
+            hProb = Math.max(1, Math.min(99, Math.round(hProb)));
+            aProb = 100 - hProb;
 
             return {
                 home, away, maxMinute, keyEvents, momentumData, possession,
