@@ -425,8 +425,8 @@ export default function TaggingPortal({ match, teams, onEnd }) {
     const direction = getCurrentDirection();
     let finalBox = selectedBox;
 
-    // Mirror the location box horizontally if the team is playing Right-to-Left!
-    if (direction === 'Right to Left' && selectedBox) {
+    // Mirror the location box horizontally if the team is playing Right-to-Left (R2L)
+    if (direction === 'R2L' && selectedBox) {
         const b = selectedBox - 1;
         const col = Math.floor(b / rows);
         const row = b % rows;
