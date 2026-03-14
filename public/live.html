@@ -293,6 +293,82 @@
 
             const pct = (n, d) => d === 0 ? 0 : Math.round((n / d) * 100);
 
+            // Win Probability Algorithm (Custom point system)
+            let hWin = 50.0;
+            let aWin = 50.0;
+            const totalMins = match.is_futsal ? 40 : 90;
+            const timePassed = Math.min(maxMinute, totalMins);
+            const timeFactor = timePassed / totalMins;
+
+            events.forEach(ev => {
+                const isHome = ev.team_id === match.team_a_id;
+                let shift = 0;
+                
+                // Helper to check if event is in attacking 3rd
+                const isInAttackingThird = (locBox) => {
+                    if (!locBox) return false;
+                    const { col } = boxToXY(locBox, match.is_futsal);
+                    const cols = match.is_futsal ? 8 : 12;
+                    if (isHome) return col >= cols - 3;
+                    return col <= 2;
+                };
+
+                if (ev.action === 'Pass' && ev.outcome === 'Successful') {
+                    shift = isInAttackingThird(ev.location_box) ? 0.5 : 0.3;
+                } else if (ev.action === 'Shot') {
+                    shift = 2.0; // +2% for any shot
+                } else if (['Dribble', 'Carry'].includes(ev.action) && ev.outcome === 'Successful') {
+                    if (isInAttackingThird(ev.location_box)) shift = 1.0; // +1% for attacking 3rd dribble/carry
+                } else if (ev.outcome === 'Goal' && ev.action !== 'Own Goal') {
+                    shift = 10.0;
+                } else if (ev.action === 'Own Goal') {
+                    // Own goal gives points to the OTHER team
+                    if (isHome) aWin += 10.0; else hWin += 10.0;
+                } else if (ev.outcome === 'Red') {
+                    shift = -7.0; // penalizes the team
+                }
+
+                if (shift !== 0) {
+                    if (isHome) hWin += shift;
+                    else aWin += shift;
+                }
+            });
+
+            // Adjust for winning team over time (0.3% increase per minute winning)
+            const diff = home.goals - away.goals;
+            if (diff > 0) hWin += (timePassed * 0.3);
+            else if (diff < 0) aWin += (timePassed * 0.3);
+
+            // Normalize
+            let hProb = Math.max(0, hWin);
+            let aProb = Math.max(0, aWin);
+            const totalProb = hProb + aProb;
+            
+            if (totalProb > 0) {
+                hProb = Math.round((hProb / totalProb) * 100);
+                aProb = Math.round((aProb / totalProb) * 100);
+            } else {
+                hProb = 50; aProb = 50;
+            }
+
+            // Draw probability is basically how close the scores are, peaking at 0 diff
+            // If they are tied, draw chance increases heavily with time
+            let dProb = 0;
+            if (diff === 0) {
+                dProb = Math.min(95, 20 + (timeFactor * 60)); // Starts at 20%, goes up to 80% if tied at end
+            } else {
+                // If not tied, draw is possible but less likely depending on time left
+                dProb = Math.max(2, 20 - (timeFactor * 25) - (Math.abs(diff) * 10));
+            }
+            dProb = Math.round(dProb);
+
+            // True normalization taking Draw into account
+            // Subtract Draw prob equally from Home and Away
+            const remain = 100 - dProb;
+            const hRatio = hProb / (hProb + aProb);
+            hProb = Math.round(remain * hRatio);
+            aProb = 100 - dProb - hProb;
+
             return {
                 home, away, maxMinute, keyEvents, momentumData, possession,
                 passAccHome: pct(home.pass_success, home.pass_total),
@@ -303,6 +379,7 @@
                 tackleAccAway: pct(away.tackle_success, away.tackles),
                 dribbleAccHome: pct(home.dribble_success, home.dribble_total),
                 dribbleAccAway: pct(away.dribble_success, away.dribble_total),
+                winProbHome: hProb, winProbAway: aProb, winProbDraw: dProb,
                 isLive: match.status === 'Live',
             };
         }
@@ -327,6 +404,27 @@
                         </div>
                     </div>
                     {total !== undefined && <div className="text-xs font-bold text-muted mt-1">{total} TOTAL</div>}
+                </div>
+            );
+        }
+
+        function WinProbabilityBar({ home, draw, away, homeName, awayName }) {
+            return (
+                <div className="mb-5">
+                    <div className="flex justify-between mb-1 text-xs font-black uppercase tracking-tight">
+                        <span className="text-red">WIN {home}%</span>
+                        <span className="text-muted tracking-widest text-[10px]">DRAW {draw}%</span>
+                        <span className="text-blue">WIN {away}%</span>
+                    </div>
+                    <div className="stat-track" style={{ height: 12 }}>
+                        <div className="stat-fill-red" style={{ width: `${home}%`, borderRight: '2px solid #000' }}></div>
+                        <div style={{ width: `${draw}%`, background: '#ccc', transition: 'width 1s ease' }}></div>
+                        <div className="stat-fill-blue" style={{ width: `${away}%`, borderLeft: '2px solid #000' }}></div>
+                    </div>
+                    <div className="flex justify-between mt-1 text-[10px] font-bold text-muted uppercase">
+                        <span>{homeName}</span>
+                        <span>{awayName}</span>
+                    </div>
                 </div>
             );
         }
@@ -734,9 +832,9 @@
             const teamAName = match.team_a?.name || 'Team A';
             const teamBName = match.team_b?.name || 'Team B';
 
-            // Use match table scores if set, else computed
-            const scoreA = match.team_a_score ?? stats.home.goals;
-            const scoreB = match.team_b_score ?? stats.away.goals;
+            // Always compute score from events, not match table
+            const scoreA = stats.home.goals;
+            const scoreB = stats.away.goals;
 
             const tabs = ['overview', 'shots', 'heatmap', 'timeline', 'players'];
 
@@ -755,18 +853,22 @@
                     </div>
 
                     {/* Scoreboard */}
-                    <div className="t-box t-shadow-lg text-center py-4 mb-6" style={{ background: 'var(--gray-light)' }}>
-                        <div className="flex justify-around items-center px-4" style={{ fontSize: 52, fontWeight: 900 }}>
-                            <span className="text-red">{scoreA}</span>
-                            <span className="text-muted" style={{ fontSize: 32, opacity: 0.2 }}>:</span>
-                            <span className="text-blue">{scoreB}</span>
-                        </div>
-                        <div className="flex justify-between text-xs font-black uppercase tracking-tight mt-3 px-4">
-                            <span className="flex-1 text-left truncate">{teamAName}</span>
-                            <span className="text-muted font-bold" style={{ borderLeft: '1px solid var(--gray-200)', borderRight: '1px solid var(--gray-200)' , padding: '0 12px' }}>
-                                {stats.isLive ? 'LIVE' : 'FINAL'}
-                            </span>
-                            <span className="flex-1 text-right truncate">{teamBName}</span>
+                    <div className="t-box t-shadow-lg py-4 mb-6" style={{ background: 'var(--gray-light)' }}>
+                        <div className="flex justify-between items-center px-4">
+                            <div className="flex-1 text-center" style={{ minWidth: 0 }}>
+                                <div style={{ fontSize: 52, fontWeight: 900, lineHeight: 1 }} className="text-red">{scoreA}</div>
+                                <div className="text-xs font-black uppercase tracking-tight mt-2 truncate w-full">{teamAName}</div>
+                            </div>
+                            <div className="px-3 text-center flex flex-col items-center">
+                                <div className="text-muted" style={{ fontSize: 32, opacity: 0.2, lineHeight: 1 }}>:</div>
+                                <div className="text-muted font-bold text-[10px] mt-2 tracking-widest bg-white border border-black px-2 py-0.5" style={{ borderRadius: 2 }}>
+                                    {stats.isLive ? 'LIVE' : 'FINAL'}
+                                </div>
+                            </div>
+                            <div className="flex-1 text-center" style={{ minWidth: 0 }}>
+                                <div style={{ fontSize: 52, fontWeight: 900, lineHeight: 1 }} className="text-blue">{scoreB}</div>
+                                <div className="text-xs font-black uppercase tracking-tight mt-2 truncate w-full">{teamBName}</div>
+                            </div>
                         </div>
                     </div>
 
@@ -783,6 +885,15 @@
                     {activeTab === 'overview' && (
                         <div>
                             <div className="t-box t-shadow p-4 mb-4">
+                                {stats.isLive && (
+                                    <WinProbabilityBar 
+                                        home={stats.winProbHome} 
+                                        draw={stats.winProbDraw} 
+                                        away={stats.winProbAway} 
+                                        homeName={teamAName} 
+                                        awayName={teamBName} 
+                                    />
+                                )}
                                 <TugOfWar label="POSSESSION" home={stats.possession} away={100 - stats.possession} />
                                 <TugOfWar label="PASS ACCURACY" home={stats.passAccHome} away={stats.passAccAway} />
                                 <TugOfWar label="SHOT ACCURACY" home={stats.shotAccHome} away={stats.shotAccAway} />
