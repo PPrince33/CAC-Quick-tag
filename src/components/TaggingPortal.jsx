@@ -427,6 +427,8 @@ export default function TaggingPortal({ match, teams, onEnd }) {
 
     // Mirror the location box horizontally if the team is playing Right-to-Left (R2L)
     if (direction === 'R2L' && selectedBox) {
+        const cols = match.is_futsal ? 8 : 12;
+        const rows = match.is_futsal ? 4 : 8;
         const b = selectedBox - 1;
         const col = Math.floor(b / rows);
         const row = b % rows;
