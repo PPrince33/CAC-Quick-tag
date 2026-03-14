@@ -88,7 +88,19 @@ function PitchGrid({ isFutsal, selectedBox, onSelectBox, accentColor }) {
         const col = i % cols;
         const row = Math.floor(i / cols);
         const boxNum = (col * rows) + row + 1; // Top-to-Bottom!
-        const isSelected = selectedBox === boxNum;
+        const isStartBox = selectedBox?.start === boxNum;
+        const isEndBox = selectedBox?.end === boxNum;
+        const isSelectingEnd = selectedBox?.needsEndBox && selectedBox?.start && !selectedBox?.end;
+
+        let boxStyle = {};
+        if (isStartBox) {
+            boxStyle = { fill: accentColor + '40', stroke: accentColor, strokeDasharray: 'none', strokeWidth: '2px' };
+        } else if (isEndBox) {
+            boxStyle = { fill: accentColor + '80', stroke: accentColor, strokeDasharray: 'none', strokeWidth: '3px' };
+        } else if (isSelectingEnd) {
+            // Pulse or highlight remaining boxes slightly to indicate we need an end location
+            boxStyle = { cursor: 'cell' };
+        }
 
         return (
           <rect
@@ -97,12 +109,26 @@ function PitchGrid({ isFutsal, selectedBox, onSelectBox, accentColor }) {
             y={row * boxH}
             width={boxW}
             height={boxH}
-            className={`pitch-box ${isSelected ? 'selected' : ''}`}
-            style={isSelected ? { fill: accentColor + '40', stroke: accentColor, strokeDasharray: 'none' } : {}}
+            className={`pitch-box ${isStartBox ? 'selected' : ''} ${isEndBox ? 'end-selected' : ''}`}
+            style={boxStyle}
             onClick={() => onSelectBox(boxNum)}
           />
         );
       })}
+
+      {/* Connecting Line if both exist */}
+      {selectedBox?.start && selectedBox?.end && (
+        <line
+            x1={((selectedBox.start - 1) / rows | 0) * boxW + boxW / 2}
+            y1={((selectedBox.start - 1) % rows) * boxH + boxH / 2}
+            x2={((selectedBox.end - 1) / rows | 0) * boxW + boxW / 2}
+            y2={((selectedBox.end - 1) % rows) * boxH + boxH / 2}
+            stroke={accentColor}
+            strokeWidth="3"
+            strokeDasharray="6,6"
+            style={{ pointerEvents: 'none' }}
+        />
+      )}
 
       {/* Box numbers — black */}
       {Array.from({ length: totalBoxes }, (_, i) => {
@@ -283,6 +309,12 @@ export default function TaggingPortal({ match, teams, onEnd }) {
   const [selectedAction, setSelectedAction] = useState(null);
   const [selectedType, setSelectedType] = useState('Normal');
   const [selectedBox, setSelectedBox] = useState(null);
+  const [selectedEndBox, setSelectedEndBox] = useState(null);
+
+  // Actions that require an end location box
+  const ACTIONS_REQUIRING_END_BOX = ['Pass', 'Carry', 'Dribble', 'Shot'];
+  // Actions where end location is strictly optional (won't block outcome)
+  const ACTIONS_OPTIONAL_END_BOX = ['Shot'];
 
   // Events log
   const [loggedEvents, setLoggedEvents] = useState([]);
@@ -413,28 +445,75 @@ export default function TaggingPortal({ match, teams, onEnd }) {
     setSelectedAction(null);
     setSelectedType('Normal');
     setSelectedBox(null);
+    setSelectedEndBox(null);
+  };
+
+  // Check if we are waiting for an end box
+  const needsEndBox = selectedAction && ACTIONS_REQUIRING_END_BOX.includes(selectedAction);
+
+  // Handle Box Click (Either Start or End based on state)
+  const handleBoxClick = (boxNum) => {
+    if (!selectedAction) {
+      // If no action selected, just select it as a generic box
+      setSelectedBox(boxNum);
+      setSelectedEndBox(null);
+    } else if (needsEndBox) {
+      if (!selectedBox) {
+        // No start box yet, so this is the start box
+        setSelectedBox(boxNum);
+      } else if (!selectedEndBox && boxNum !== selectedBox) {
+        // Start box exists, so this is the end box
+        setSelectedEndBox(boxNum);
+      } else if (selectedBox && selectedEndBox) {
+         // Both exist, user clicked again... let's reset to start box
+         setSelectedBox(boxNum);
+         setSelectedEndBox(null);
+      }
+    } else {
+      // Action selected but doesn't need an end box
+      setSelectedBox(boxNum);
+      setSelectedEndBox(null);
+    }
   };
 
   // Handle outcome click = save event
   const handleOutcome = async (outcome) => {
     if (!selectedAction || !selectedBox) {
-      setToast('⚠ Select location on pitch first');
+      setToast('⚠ Select start location on pitch first');
+      return;
+    }
+
+    if (needsEndBox && !selectedEndBox && !ACTIONS_OPTIONAL_END_BOX.includes(selectedAction)) {
+      setToast(`⚠ Select End Location for ${selectedAction} before saving`);
       return;
     }
 
     const direction = getCurrentDirection();
-    let finalBox = selectedBox;
+    let finalBox = typeof selectedBox === 'object' ? selectedBox.start : selectedBox;
+    let finalEndBox = selectedEndBox;
 
-    // Mirror the location box (180 degree rotation) if the team is playing Right-to-Left (R2L)
-    if (direction === 'R2L' && selectedBox) {
+    // Mirror the location boxes (180 degree rotation) if the team is playing Right-to-Left (R2L)
+    if (direction === 'R2L') {
         const cols = match.is_futsal ? 8 : 12;
         const rows = match.is_futsal ? 4 : 8;
-        const b = selectedBox - 1;
-        const col = Math.floor(b / rows);
-        const row = b % rows;
-        const mirroredCol = cols - 1 - col;
-        const mirroredRow = rows - 1 - row;
-        finalBox = (mirroredCol * rows) + mirroredRow + 1;
+
+        if (finalBox != null) {
+            const b = finalBox - 1;
+            const col = Math.floor(b / rows);
+            const row = b % rows;
+            const mirroredCol = cols - 1 - col;
+            const mirroredRow = rows - 1 - row;
+            finalBox = (mirroredCol * rows) + mirroredRow + 1;
+        }
+
+        if (finalEndBox != null) {
+            const b = finalEndBox - 1;
+            const col = Math.floor(b / rows);
+            const row = b % rows;
+            const mirroredCol = cols - 1 - col;
+            const mirroredRow = rows - 1 - row;
+            finalEndBox = (mirroredCol * rows) + mirroredRow + 1;
+        }
     }
 
     const eventPayload = {
@@ -443,6 +522,7 @@ export default function TaggingPortal({ match, teams, onEnd }) {
       half: currentHalf,
       action: selectedAction,
       location_box: finalBox,
+      end_location_box: finalEndBox,
       type: ACTIONS_WITH_TYPE.includes(selectedAction) ? selectedType : null,
       outcome: outcome,
       direction_of_attack: getCurrentDirection(),
@@ -470,6 +550,7 @@ export default function TaggingPortal({ match, teams, onEnd }) {
       setSelectedAction(null);
       setSelectedType('Normal');
       setSelectedBox(null);
+      setSelectedEndBox(null);
     } else {
       setToast('✗ Failed to save event');
       console.error(error);
@@ -689,14 +770,14 @@ export default function TaggingPortal({ match, teams, onEnd }) {
       )}
 
       {/* =============================================
-          PITCH AREA (full width, no sidebars)
+          PITCH AREA
           ============================================= */}
       <div className="pitch-container">
         <div className="pitch-wrapper">
           <PitchGrid
             isFutsal={match.is_futsal}
-            selectedBox={selectedBox}
-            onSelectBox={setSelectedBox}
+            selectedBox={{ start: selectedBox, end: selectedEndBox, needsEndBox }}
+            onSelectBox={handleBoxClick}
             accentColor={accentHex}
           />
         </div>
