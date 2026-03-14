@@ -313,19 +313,19 @@
                     return col <= 2;
                 };
 
-                if (ev.action === 'Pass' && ev.outcome === 'Successful') {
-                    shift = isInAttackingThird(ev.location_box) ? 0.5 : 0.3;
-                } else if (ev.action === 'Shot') {
-                    shift = 2.0; // +2% for any shot
-                } else if (['Dribble', 'Carry'].includes(ev.action) && ev.outcome === 'Successful') {
-                    if (isInAttackingThird(ev.location_box)) shift = 1.0; // +1% for attacking 3rd dribble/carry
-                } else if (ev.outcome === 'Goal' && ev.action !== 'Own Goal') {
+                if (ev.outcome === 'Goal' && ev.action !== 'Own Goal') {
                     shift = 10.0;
                 } else if (ev.action === 'Own Goal') {
                     // Own goal gives points to the OTHER team
                     if (isHome) aWin += 10.0; else hWin += 10.0;
                 } else if (ev.outcome === 'Red') {
                     shift = -7.0; // penalizes the team
+                } else if (ev.action === 'Shot') {
+                    shift = 2.0; // +2% for any shot that isn't a goal
+                } else if (ev.action === 'Pass' && ev.outcome === 'Successful') {
+                    shift = isInAttackingThird(ev.location_box) ? 0.5 : 0.3;
+                } else if (['Dribble', 'Carry'].includes(ev.action) && ev.outcome === 'Successful') {
+                    if (isInAttackingThird(ev.location_box)) shift = 1.0; // +1% for attacking 3rd dribble/carry
                 }
 
                 if (shift !== 0) {
