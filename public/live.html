@@ -339,35 +339,17 @@
             if (diff > 0) hWin += (timePassed * 0.3);
             else if (diff < 0) aWin += (timePassed * 0.3);
 
-            // Normalize
+            // Normalize into a clean sum to 100%
             let hProb = Math.max(0, hWin);
             let aProb = Math.max(0, aWin);
             const totalProb = hProb + aProb;
             
             if (totalProb > 0) {
                 hProb = Math.round((hProb / totalProb) * 100);
-                aProb = Math.round((aProb / totalProb) * 100);
+                aProb = 100 - hProb;
             } else {
                 hProb = 50; aProb = 50;
             }
-
-            // Draw probability is basically how close the scores are, peaking at 0 diff
-            // If they are tied, draw chance increases heavily with time
-            let dProb = 0;
-            if (diff === 0) {
-                dProb = Math.min(95, 20 + (timeFactor * 60)); // Starts at 20%, goes up to 80% if tied at end
-            } else {
-                // If not tied, draw is possible but less likely depending on time left
-                dProb = Math.max(2, 20 - (timeFactor * 25) - (Math.abs(diff) * 10));
-            }
-            dProb = Math.round(dProb);
-
-            // True normalization taking Draw into account
-            // Subtract Draw prob equally from Home and Away
-            const remain = 100 - dProb;
-            const hRatio = hProb / (hProb + aProb);
-            hProb = Math.round(remain * hRatio);
-            aProb = 100 - dProb - hProb;
 
             return {
                 home, away, maxMinute, keyEvents, momentumData, possession,
@@ -408,18 +390,16 @@
             );
         }
 
-        function WinProbabilityBar({ home, draw, away, homeName, awayName }) {
+        function WinProbabilityBar({ home, away, homeName, awayName }) {
             return (
                 <div className="mb-5">
                     <div className="flex justify-between mb-1 text-xs font-black uppercase tracking-tight">
                         <span className="text-red">WIN {home}%</span>
-                        <span className="text-muted tracking-widest text-[10px]">DRAW {draw}%</span>
                         <span className="text-blue">WIN {away}%</span>
                     </div>
                     <div className="stat-track" style={{ height: 12 }}>
-                        <div className="stat-fill-red" style={{ width: `${home}%`, borderRight: '2px solid #000' }}></div>
-                        <div style={{ width: `${draw}%`, background: '#ccc', transition: 'width 1s ease' }}></div>
-                        <div className="stat-fill-blue" style={{ width: `${away}%`, borderLeft: '2px solid #000' }}></div>
+                        <div className="stat-fill-red" style={{ width: `${home}%` }}></div>
+                        <div className="stat-fill-blue" style={{ width: `${away}%` }}></div>
                     </div>
                     <div className="flex justify-between mt-1 text-[10px] font-bold text-muted uppercase">
                         <span>{homeName}</span>
@@ -888,7 +868,6 @@
                                 {stats.isLive && (
                                     <WinProbabilityBar 
                                         home={stats.winProbHome} 
-                                        draw={stats.winProbDraw} 
                                         away={stats.winProbAway} 
                                         homeName={teamAName} 
                                         awayName={teamBName} 
