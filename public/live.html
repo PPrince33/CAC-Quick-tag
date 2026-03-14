@@ -390,24 +390,6 @@
             );
         }
 
-        function WinProbabilityBar({ home, away, homeName, awayName }) {
-            return (
-                <div className="mb-5">
-                    <div className="flex justify-between mb-1 text-xs font-black uppercase tracking-tight">
-                        <span className="text-red">WIN {home}%</span>
-                        <span className="text-blue">WIN {away}%</span>
-                    </div>
-                    <div className="stat-track" style={{ height: 12 }}>
-                        <div className="stat-fill-red" style={{ width: `${home}%` }}></div>
-                        <div className="stat-fill-blue" style={{ width: `${away}%` }}></div>
-                    </div>
-                    <div className="flex justify-between mt-1 text-[10px] font-bold text-muted uppercase">
-                        <span>{homeName}</span>
-                        <span>{awayName}</span>
-                    </div>
-                </div>
-            );
-        }
 
         function TugOfWar({ label, home, away }) {
             return (
@@ -866,12 +848,7 @@
                         <div>
                             <div className="t-box t-shadow p-4 mb-4">
                                 {stats.isLive && (
-                                    <WinProbabilityBar 
-                                        home={stats.winProbHome} 
-                                        away={stats.winProbAway} 
-                                        homeName={teamAName} 
-                                        awayName={teamBName} 
-                                    />
+                                    <TugOfWar label="WIN PROBABILITY" home={stats.winProbHome} away={stats.winProbAway} />
                                 )}
                                 <TugOfWar label="POSSESSION" home={stats.possession} away={100 - stats.possession} />
                                 <TugOfWar label="PASS ACCURACY" home={stats.passAccHome} away={stats.passAccAway} />
