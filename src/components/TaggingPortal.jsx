@@ -425,7 +425,7 @@ export default function TaggingPortal({ match, teams, onEnd }) {
     const direction = getCurrentDirection();
     let finalBox = selectedBox;
 
-    // Mirror the location box horizontally if the team is playing Right-to-Left (R2L)
+    // Mirror the location box (180 degree rotation) if the team is playing Right-to-Left (R2L)
     if (direction === 'R2L' && selectedBox) {
         const cols = match.is_futsal ? 8 : 12;
         const rows = match.is_futsal ? 4 : 8;
@@ -433,7 +433,8 @@ export default function TaggingPortal({ match, teams, onEnd }) {
         const col = Math.floor(b / rows);
         const row = b % rows;
         const mirroredCol = cols - 1 - col;
-        finalBox = (mirroredCol * rows) + row + 1;
+        const mirroredRow = rows - 1 - row;
+        finalBox = (mirroredCol * rows) + mirroredRow + 1;
     }
 
     const eventPayload = {
@@ -449,7 +450,10 @@ export default function TaggingPortal({ match, teams, onEnd }) {
       match_minute: Math.floor(seconds / 60),
     };
 
+    console.log("SENDING PAYLOAD TO SUPABASE:", eventPayload);
+
     const { data, error } = await supabase.from('events').insert([eventPayload]).select().single();
+    if (error) console.error("SUPABASE ERROR:", error);
 
     if (!error && data) {
       setLoggedEvents(prev => [...prev, data]);
