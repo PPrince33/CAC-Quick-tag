@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { Play, Edit3, Eye, List, Trash2, RotateCcw, CheckSquare, Square, Lock } from 'lucide-react';
+import { Play, Edit3, Eye, List, Trash2, RotateCcw, CheckSquare, Square, Lock, Save, X } from 'lucide-react';
 
 export default function MatchList({ onStartMatch, onEditMatch, onResumeMatch }) {
   const [matches, setMatches] = useState([]);
@@ -15,6 +15,11 @@ export default function MatchList({ onStartMatch, onEditMatch, onResumeMatch }) 
   const [deletePassword, setDeletePassword] = useState('');
   const [deleteError, setDeleteError] = useState('');
   const [deleting, setDeleting] = useState(false);
+
+  // Score & Notes edit modal
+  const [editMatch, setEditMatch] = useState(null);
+  const [scoreForm, setScoreForm] = useState({ team_a_score: '', team_b_score: '', notes: '' });
+  const [saving, setSaving] = useState(false);
 
   const fetchData = async () => {
     const { data: m } = await supabase.from('matches')
@@ -80,7 +85,6 @@ export default function MatchList({ onStartMatch, onEditMatch, onResumeMatch }) 
     setDeleteError('');
     setDeleting(true);
 
-    // Verify password against analysts table
     const analystId = localStorage.getItem('cac_analyst_id');
     const { data, error } = await supabase
       .from('analysts')
@@ -95,7 +99,6 @@ export default function MatchList({ onStartMatch, onEditMatch, onResumeMatch }) 
       return;
     }
 
-    // Password verified — delete selected matches and their events
     const ids = Array.from(selected);
     for (const id of ids) {
       await supabase.from('events').delete().eq('match_id', id);
@@ -106,6 +109,28 @@ export default function MatchList({ onStartMatch, onEditMatch, onResumeMatch }) 
     setShowDeleteModal(false);
     setSelectMode(false);
     setSelected(new Set());
+    fetchData();
+  };
+
+  // Score & Notes handlers
+  const openScoreEdit = (m) => {
+    setEditMatch(m);
+    setScoreForm({
+      team_a_score: m.team_a_score ?? '',
+      team_b_score: m.team_b_score ?? '',
+      notes: m.notes || '',
+    });
+  };
+
+  const saveScore = async () => {
+    setSaving(true);
+    await supabase.from('matches').update({
+      team_a_score: scoreForm.team_a_score !== '' ? parseInt(scoreForm.team_a_score) : null,
+      team_b_score: scoreForm.team_b_score !== '' ? parseInt(scoreForm.team_b_score) : null,
+      notes: scoreForm.notes || null,
+    }).eq('id', editMatch.id);
+    setSaving(false);
+    setEditMatch(null);
     fetchData();
   };
 
@@ -193,6 +218,87 @@ export default function MatchList({ onStartMatch, onEditMatch, onResumeMatch }) 
         </div>
       )}
 
+      {/* Score & Notes Modal */}
+      {editMatch && (
+        <div className="modal-overlay">
+          <div className="modal" style={{ maxWidth: '480px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h3 style={{ marginBottom: 0 }}>Match Score & Notes</h3>
+              <button className="btn btn-sm btn-ghost" onClick={() => setEditMatch(null)}><X size={14} /></button>
+            </div>
+
+            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
+                {/* Team A */}
+                <div style={{ textAlign: 'center', flex: 1 }}>
+                  <div style={{
+                    width: 16, height: 16, borderRadius: '50%', margin: '0 auto 6px',
+                    background: `var(--jersey-${editMatch.home_jersey_color || 'red'})`,
+                    border: '1px solid var(--border)'
+                  }} />
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>
+                    {editMatch.team_a?.name}
+                  </div>
+                  <input
+                    className="form-input"
+                    type="number"
+                    min="0"
+                    placeholder="0"
+                    value={scoreForm.team_a_score}
+                    onChange={e => setScoreForm(p => ({ ...p, team_a_score: e.target.value }))}
+                    style={{
+                      width: '80px', textAlign: 'center', fontSize: '28px', fontWeight: 900,
+                      fontFamily: 'var(--font-mono)', padding: '12px', margin: '0 auto',
+                    }}
+                  />
+                </div>
+
+                <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-muted)', paddingTop: '28px' }}>—</div>
+
+                {/* Team B */}
+                <div style={{ textAlign: 'center', flex: 1 }}>
+                  <div style={{
+                    width: 16, height: 16, borderRadius: '50%', margin: '0 auto 6px',
+                    background: `var(--jersey-${editMatch.away_jersey_color || 'blue'})`,
+                    border: '1px solid var(--border)'
+                  }} />
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>
+                    {editMatch.team_b?.name}
+                  </div>
+                  <input
+                    className="form-input"
+                    type="number"
+                    min="0"
+                    placeholder="0"
+                    value={scoreForm.team_b_score}
+                    onChange={e => setScoreForm(p => ({ ...p, team_b_score: e.target.value }))}
+                    style={{
+                      width: '80px', textAlign: 'center', fontSize: '28px', fontWeight: 900,
+                      fontFamily: 'var(--font-mono)', padding: '12px', margin: '0 auto',
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Match Notes</label>
+              <textarea
+                className="form-input"
+                placeholder="e.g. Great performance from both sides, 2 penalties..."
+                value={scoreForm.notes}
+                onChange={e => setScoreForm(p => ({ ...p, notes: e.target.value }))}
+                style={{ minHeight: '100px' }}
+              />
+            </div>
+
+            <button className="btn btn-primary btn-block mt-4" onClick={saveScore} disabled={saving}>
+              <Save size={16} /> {saving ? 'Saving...' : 'Save Score & Notes'}
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="card">
         {loading ? (
           <div className="empty-state"><p>Loading matches...</p></div>
@@ -220,6 +326,7 @@ export default function MatchList({ onStartMatch, onEditMatch, onResumeMatch }) 
                   </th>
                 )}
                 <th>Match</th>
+                <th>Score</th>
                 <th>Tournament</th>
                 <th>Type</th>
                 <th>Status</th>
@@ -259,6 +366,19 @@ export default function MatchList({ onStartMatch, onEditMatch, onResumeMatch }) 
                       }} />
                     </div>
                     {m.details && <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>{m.details}</div>}
+                    {m.notes && <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px', fontStyle: 'italic' }}>📝 {m.notes}</div>}
+                  </td>
+                  <td>
+                    {(m.team_a_score !== null && m.team_b_score !== null) ? (
+                      <span style={{
+                        fontFamily: 'var(--font-mono)', fontWeight: 900, fontSize: '16px',
+                        color: 'var(--text-primary)', letterSpacing: '1px',
+                      }}>
+                        {m.team_a_score} — {m.team_b_score}
+                      </span>
+                    ) : (
+                      <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>—</span>
+                    )}
                   </td>
                   <td>{m.tournaments?.name || '—'}</td>
                   <td>
@@ -280,6 +400,9 @@ export default function MatchList({ onStartMatch, onEditMatch, onResumeMatch }) 
                             <RotateCcw size={14} /> Resume
                           </button>
                         )}
+                        <button className="btn btn-sm btn-ghost" onClick={() => openScoreEdit(m)} title="Score & Notes">
+                          🏆
+                        </button>
                         {(m.status === 'Live' || m.status === 'Finished' || m.status === 'Published') && (
                           <button className="btn btn-sm btn-ghost" onClick={() => onEditMatch(m)}>
                             <Edit3 size={14} /> Edit
