@@ -1352,3 +1352,71 @@ textarea.form-input {
   }
 }
 
+/* =============================================
+   Last Event Table Styles
+   ============================================= */
+.last-event-container {
+  padding: 12px 16px;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.last-event-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.last-event-header h3 {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+}
+
+.last-event-time {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.last-event-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.last-event-table th {
+  text-align: left;
+  padding: 4px 8px;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+}
+
+.last-event-table td {
+  padding: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.last-event-table tr:last-child td {
+  border-bottom: none;
+}
+
+.badge-outcome {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+

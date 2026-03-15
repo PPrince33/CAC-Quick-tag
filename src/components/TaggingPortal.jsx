@@ -112,6 +112,10 @@ function PitchGrid({ isFutsal, selectedBox, onSelectBox, accentColor }) {
             className={`pitch-box ${isStartBox ? 'selected' : ''} ${isEndBox ? 'end-selected' : ''}`}
             style={boxStyle}
             onClick={() => onSelectBox(boxNum)}
+            onDoubleClick={(e) => {
+              e.preventDefault();
+              onSelectBox(boxNum, true);
+            }}
           />
         );
       })}
@@ -452,7 +456,20 @@ export default function TaggingPortal({ match, teams, onEnd }) {
   const needsEndBox = selectedAction && ACTIONS_REQUIRING_END_BOX.includes(selectedAction);
 
   // Handle Box Click (Either Start or End based on state)
-  const handleBoxClick = (boxNum) => {
+  const handleBoxClick = (boxNum, isDoubleClick = false) => {
+    if (isDoubleClick) {
+      if (selectedEndBox === boxNum) {
+        setSelectedEndBox(null);
+      } else if (selectedBox === boxNum) {
+        setSelectedBox(null);
+        if (selectedEndBox) {
+          setSelectedBox(selectedEndBox);
+          setSelectedEndBox(null);
+        }
+      }
+      return;
+    }
+
     if (!selectedAction) {
       // If no action selected, just select it as a generic box
       setSelectedBox(boxNum);
@@ -461,8 +478,8 @@ export default function TaggingPortal({ match, teams, onEnd }) {
       if (!selectedBox) {
         // No start box yet, so this is the start box
         setSelectedBox(boxNum);
-      } else if (!selectedEndBox && boxNum !== selectedBox) {
-        // Start box exists, so this is the end box
+      } else if (!selectedEndBox) {
+        // Start box exists, so this is the end box (allowing same box)
         setSelectedEndBox(boxNum);
       } else if (selectedBox && selectedEndBox) {
          // Both exist, user clicked again... let's reset to start box
@@ -549,7 +566,8 @@ export default function TaggingPortal({ match, teams, onEnd }) {
       // Reset for next entry
       setSelectedAction(null);
       setSelectedType('Normal');
-      setSelectedBox(null);
+      // Sequential location: set new start box to the end box of the last event
+      setSelectedBox(selectedEndBox || selectedBox);
       setSelectedEndBox(null);
     } else {
       setToast('✗ Failed to save event');
@@ -798,6 +816,46 @@ export default function TaggingPortal({ match, teams, onEnd }) {
               {outcome}
             </button>
           ))}
+        </div>
+      )}
+
+      {/* =============================================
+          LAST EVENT TABLE
+          ============================================= */}
+      {loggedEvents.length > 0 && (
+        <div className="last-event-container">
+          <div className="last-event-header">
+            <h3>Last Saved Entry</h3>
+            <span className="last-event-time">{formatTime(loggedEvents[loggedEvents.length - 1].timestamp)}</span>
+          </div>
+          <table className="last-event-table">
+            <thead>
+              <tr>
+                <th>Team</th>
+                <th>Action</th>
+                <th>Outcome</th>
+                <th>Start</th>
+                <th>End</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(() => {
+                const last = loggedEvents[loggedEvents.length - 1];
+                const lastTeam = last.team_id === match.team_a_id ? teamA : teamB;
+                return (
+                  <tr key={last.id}>
+                    <td style={{ fontWeight: 700, color: JERSEY_HEX[last.team_id === match.team_a_id ? (match.home_jersey_color || 'red') : (match.away_jersey_color || 'blue')] }}>
+                      {lastTeam?.name}
+                    </td>
+                    <td>{last.action}</td>
+                    <td><span className={`badge-outcome ${getOutcomeClass(last.outcome)}`}>{last.outcome}</span></td>
+                    <td>{last.location_box}</td>
+                    <td>{last.end_location_box || '—'}</td>
+                  </tr>
+                );
+              })()}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
