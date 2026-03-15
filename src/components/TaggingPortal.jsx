@@ -310,7 +310,7 @@ export default function TaggingPortal({ match, teams, onEnd }) {
   const [directionTeamId, setDirectionTeamId] = useState(match.team_a_id);
 
   // Event building state
-  const [selectedAction, setSelectedAction] = useState(null);
+  const [selectedAction, setSelectedAction] = useState('Pass');
   const [selectedType, setSelectedType] = useState('Normal');
   const [selectedBox, setSelectedBox] = useState(null);
   const [selectedEndBox, setSelectedEndBox] = useState(null);
@@ -445,8 +445,8 @@ export default function TaggingPortal({ match, teams, onEnd }) {
   // Handle team toggle
   const toggleTeam = () => {
     setCurrentTeamId(prev => prev === match.team_a_id ? match.team_b_id : match.team_a_id);
-    // Reset action selection on team change
-    setSelectedAction(null);
+    // Reset action selection on team change - default to Pass
+    setSelectedAction('Pass');
     setSelectedType('Normal');
     setSelectedBox(null);
     setSelectedEndBox(null);
@@ -564,7 +564,7 @@ export default function TaggingPortal({ match, teams, onEnd }) {
       }
 
       // Reset for next entry
-      setSelectedAction(null);
+      setSelectedAction('Pass');
       setSelectedType('Normal');
       // Sequential location: set new start box to the end box of the last event
       setSelectedBox(selectedEndBox || selectedBox);
