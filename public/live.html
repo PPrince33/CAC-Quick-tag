@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,7 +10,8 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800;900&display=swap"
+        rel="stylesheet">
 
     <style>
         :root {
@@ -25,7 +27,13 @@
             --yellow: #eab308;
             --orange: #ea580c;
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
             font-family: 'JetBrains Mono', monospace;
             background: var(--bg);
@@ -33,15 +41,29 @@
             overflow-x: hidden;
             -webkit-font-smoothing: antialiased;
         }
+
         .grid-bg {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
             background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
             background-size: 20px 20px;
-            pointer-events: none; z-index: -1; opacity: 0.5;
+            pointer-events: none;
+            z-index: -1;
+            opacity: 0.5;
         }
 
         /* Layout */
-        .container { max-width: 480px; margin: 0 auto; padding: 16px; min-height: 100vh; position: relative; z-index: 1; }
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 16px;
+            min-height: 100vh;
+            position: relative;
+            z-index: 1;
+        }
 
         /* Terminal Box */
         .t-box {
@@ -49,118 +71,483 @@
             background: var(--bg);
             position: relative;
         }
-        .t-shadow { box-shadow: 4px 4px 0px 0px rgba(0,0,0,1); }
-        .t-shadow-lg { box-shadow: 6px 6px 0px 0px rgba(0,0,0,1); }
+
+        .t-shadow {
+            box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 1);
+        }
+
+        .t-shadow-lg {
+            box-shadow: 6px 6px 0px 0px rgba(0, 0, 0, 1);
+        }
 
         /* Typography */
-        .text-xs { font-size: 10px; } .text-sm { font-size: 12px; } .text-base { font-size: 14px; }
-        .text-lg { font-size: 18px; } .text-xl { font-size: 24px; } .text-2xl { font-size: 32px; }
-        .text-5xl { font-size: 56px; }
-        .font-black { font-weight: 900; } .font-bold { font-weight: 700; }
-        .uppercase { text-transform: uppercase; }
-        .tracking-tight { letter-spacing: -0.02em; } .tracking-wide { letter-spacing: 0.05em; }
-        .tracking-widest { letter-spacing: 0.1em; }
-        .text-center { text-align: center; } .text-right { text-align: right; } .text-left { text-align: left; }
-        .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .text-red { color: var(--red); } .text-blue { color: var(--blue); }
-        .text-muted { color: var(--muted); } .text-green { color: var(--green); }
+        .text-xs {
+            font-size: 10px;
+        }
+
+        .text-sm {
+            font-size: 12px;
+        }
+
+        .text-base {
+            font-size: 14px;
+        }
+
+        .text-lg {
+            font-size: 18px;
+        }
+
+        .text-xl {
+            font-size: 24px;
+        }
+
+        .text-2xl {
+            font-size: 32px;
+        }
+
+        .text-5xl {
+            font-size: 56px;
+        }
+
+        .font-black {
+            font-weight: 900;
+        }
+
+        .font-bold {
+            font-weight: 700;
+        }
+
+        .uppercase {
+            text-transform: uppercase;
+        }
+
+        .tracking-tight {
+            letter-spacing: -0.02em;
+        }
+
+        .tracking-wide {
+            letter-spacing: 0.05em;
+        }
+
+        .tracking-widest {
+            letter-spacing: 0.1em;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .text-left {
+            text-align: left;
+        }
+
+        .truncate {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .text-red {
+            color: var(--red);
+        }
+
+        .text-blue {
+            color: var(--blue);
+        }
+
+        .text-muted {
+            color: var(--muted);
+        }
+
+        .text-green {
+            color: var(--green);
+        }
 
         /* Flexbox */
-        .flex { display: flex; } .flex-col { flex-direction: column; }
-        .items-center { align-items: center; } .items-start { align-items: start; } .items-end { align-items: flex-end; }
-        .justify-center { justify-content: center; } .justify-between { justify-content: space-between; }
-        .justify-around { justify-content: space-around; }
-        .gap-1 { gap: 4px; } .gap-2 { gap: 8px; } .gap-3 { gap: 12px; } .gap-4 { gap: 16px; } .gap-6 { gap: 24px; }
-        .flex-1 { flex: 1; } .flex-wrap { flex-wrap: wrap; }
-        .w-full { width: 100%; }
+        .flex {
+            display: flex;
+        }
+
+        .flex-col {
+            flex-direction: column;
+        }
+
+        .items-center {
+            align-items: center;
+        }
+
+        .items-start {
+            align-items: start;
+        }
+
+        .items-end {
+            align-items: flex-end;
+        }
+
+        .justify-center {
+            justify-content: center;
+        }
+
+        .justify-between {
+            justify-content: space-between;
+        }
+
+        .justify-around {
+            justify-content: space-around;
+        }
+
+        .gap-1 {
+            gap: 4px;
+        }
+
+        .gap-2 {
+            gap: 8px;
+        }
+
+        .gap-3 {
+            gap: 12px;
+        }
+
+        .gap-4 {
+            gap: 16px;
+        }
+
+        .gap-6 {
+            gap: 24px;
+        }
+
+        .flex-1 {
+            flex: 1;
+        }
+
+        .flex-wrap {
+            flex-wrap: wrap;
+        }
+
+        .w-full {
+            width: 100%;
+        }
 
         /* Spacing */
-        .p-2 { padding: 8px; } .p-3 { padding: 12px; } .p-4 { padding: 16px; } .p-5 { padding: 20px; }
-        .px-2 { padding-left: 8px; padding-right: 8px; } .px-3 { padding-left: 12px; padding-right: 12px; }
-        .py-1 { padding-top: 4px; padding-bottom: 4px; } .py-2 { padding-top: 8px; padding-bottom: 8px; }
-        .py-4 { padding-top: 16px; padding-bottom: 16px; }
-        .mb-1 { margin-bottom: 4px; } .mb-2 { margin-bottom: 8px; } .mb-3 { margin-bottom: 12px; }
-        .mb-4 { margin-bottom: 16px; } .mb-6 { margin-bottom: 24px; }
-        .mt-1 { margin-top: 4px; } .mt-2 { margin-top: 8px; } .mt-4 { margin-top: 16px; }
-        .pb-2 { padding-bottom: 8px; } .pb-12 { padding-bottom: 48px; }
+        .p-2 {
+            padding: 8px;
+        }
+
+        .p-3 {
+            padding: 12px;
+        }
+
+        .p-4 {
+            padding: 16px;
+        }
+
+        .p-5 {
+            padding: 20px;
+        }
+
+        .px-2 {
+            padding-left: 8px;
+            padding-right: 8px;
+        }
+
+        .px-3 {
+            padding-left: 12px;
+            padding-right: 12px;
+        }
+
+        .py-1 {
+            padding-top: 4px;
+            padding-bottom: 4px;
+        }
+
+        .py-2 {
+            padding-top: 8px;
+            padding-bottom: 8px;
+        }
+
+        .py-4 {
+            padding-top: 16px;
+            padding-bottom: 16px;
+        }
+
+        .mb-1 {
+            margin-bottom: 4px;
+        }
+
+        .mb-2 {
+            margin-bottom: 8px;
+        }
+
+        .mb-3 {
+            margin-bottom: 12px;
+        }
+
+        .mb-4 {
+            margin-bottom: 16px;
+        }
+
+        .mb-6 {
+            margin-bottom: 24px;
+        }
+
+        .mt-1 {
+            margin-top: 4px;
+        }
+
+        .mt-2 {
+            margin-top: 8px;
+        }
+
+        .mt-4 {
+            margin-top: 16px;
+        }
+
+        .pb-2 {
+            padding-bottom: 8px;
+        }
+
+        .pb-12 {
+            padding-bottom: 48px;
+        }
 
         /* Grid */
-        .grid { display: grid; } .grid-2 { grid-template-columns: 1fr 1fr; }
+        .grid {
+            display: grid;
+        }
+
+        .grid-2 {
+            grid-template-columns: 1fr 1fr;
+        }
 
         /* Blink */
-        @keyframes blink { 50% { opacity: 0; } }
-        .blink { animation: blink 1s step-end infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-        .animate-pulse { animation: pulse 2s ease-in-out infinite; }
+        @keyframes blink {
+            50% {
+                opacity: 0;
+            }
+        }
+
+        .blink {
+            animation: blink 1s step-end infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .animate-pulse {
+            animation: pulse 2s ease-in-out infinite;
+        }
 
         /* Stat bar */
-        .stat-track { background: var(--gray-200); height: 8px; border: 1px solid #000; display: flex; overflow: hidden; }
-        .stat-fill-red { background: var(--red); transition: width 1s ease; }
-        .stat-fill-blue { background: var(--blue); transition: width 1s ease; border-left: 2px solid #000; }
+        .stat-track {
+            background: var(--gray-200);
+            height: 8px;
+            border: 1px solid #000;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .stat-fill-red {
+            background: var(--red);
+            transition: width 1s ease;
+        }
+
+        .stat-fill-blue {
+            background: var(--blue);
+            transition: width 1s ease;
+            border-left: 2px solid #000;
+        }
 
         /* Buttons */
         .btn-back {
-            background: none; border: none; cursor: pointer; font-family: inherit;
-            font-size: 11px; font-weight: 900; text-transform: uppercase;
-            letter-spacing: -0.02em; border-bottom: 2px solid #000; padding: 0 0 2px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: -0.02em;
+            border-bottom: 2px solid #000;
+            padding: 0 0 2px;
             color: #000;
         }
+
         .match-card {
-            padding: 16px; cursor: pointer; transition: background 0.15s;
+            padding: 16px;
+            cursor: pointer;
+            transition: background 0.15s;
             margin-bottom: 12px;
         }
-        .match-card:hover { background: #fafafa; }
-        .match-card:active { box-shadow: none; transform: translate(2px, 2px); }
-        .tournament-btn {
-            width: 100%; text-align: left; padding: 16px; border: none; cursor: pointer;
-            font-family: inherit; font-weight: 900; font-size: 13px; text-transform: uppercase;
-            letter-spacing: -0.02em; transition: all 0.15s; display: flex;
-            justify-content: space-between; align-items: center; background: white; color: black;
+
+        .match-card:hover {
+            background: #fafafa;
         }
-        .tournament-btn:hover { background: #000; color: #fff; }
-        .tournament-btn:active { box-shadow: none; transform: translate(2px, 2px); }
+
+        .match-card:active {
+            box-shadow: none;
+            transform: translate(2px, 2px);
+        }
+
+        .tournament-btn {
+            width: 100%;
+            text-align: left;
+            padding: 16px;
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 900;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: -0.02em;
+            transition: all 0.15s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+            color: black;
+        }
+
+        .tournament-btn:hover {
+            background: #000;
+            color: #fff;
+        }
+
+        .tournament-btn:active {
+            box-shadow: none;
+            transform: translate(2px, 2px);
+        }
 
         /* Tabs */
-        .tab-bar { display: flex; border-bottom: 2px solid #000; margin-bottom: 16px; overflow-x: auto; }
-        .tab-btn {
-            background: none; border: none; cursor: pointer; font-family: inherit;
-            font-size: 10px; font-weight: 900; text-transform: uppercase; padding: 8px 12px;
-            letter-spacing: 0.05em; color: var(--muted); white-space: nowrap;
-            border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.15s;
+        .tab-bar {
+            display: flex;
+            border-bottom: 2px solid #000;
+            margin-bottom: 16px;
+            overflow-x: auto;
         }
-        .tab-btn.active { color: #000; border-bottom-color: #000; }
-        .tab-btn:hover { color: #000; }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 10px;
+            font-weight: 900;
+            text-transform: uppercase;
+            padding: 8px 12px;
+            letter-spacing: 0.05em;
+            color: var(--muted);
+            white-space: nowrap;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.15s;
+        }
+
+        .tab-btn.active {
+            color: #000;
+            border-bottom-color: #000;
+        }
+
+        .tab-btn:hover {
+            color: #000;
+        }
 
         /* Pitch SVG */
-        .pitch-wrap { width: 100%; aspect-ratio: 1.5; position: relative; }
-        .pitch-wrap svg { width: 100%; height: 100%; }
+        .pitch-wrap {
+            width: 100%;
+            aspect-ratio: 1.5;
+            position: relative;
+        }
+
+        .pitch-wrap svg {
+            width: 100%;
+            height: 100%;
+        }
 
         /* Momentum chart */
-        .momentum-chart { width: 100%; height: 120px; }
+        .momentum-chart {
+            width: 100%;
+            height: 120px;
+        }
 
         /* Timeline */
         .timeline-item {
-            display: flex; gap: 8px; align-items: flex-start;
-            padding: 8px 0; border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            gap: 8px;
+            align-items: flex-start;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--gray-200);
             font-size: 11px;
         }
+
         .timeline-badge {
-            width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
-            font-size: 14px; flex-shrink: 0; border: 2px solid #000;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0;
+            border: 2px solid #000;
+        }
+
+        /* Filter Selects */
+        .h-map-select {
+            flex: 1;
+            min-width: 80px;
+            background: white;
+            border: 1px solid #000;
+            padding: 4px;
+            font-size: 10px;
+            font-weight: 900;
+            font-family: inherit;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+
+        .h-map-select:focus {
+            outline: none;
+            background: #eee;
         }
 
         /* Splash */
         .splash {
-            position: fixed; inset: 0; z-index: 100; background: white;
-            display: flex; align-items: center; justify-content: center;
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         /* Hide scrollbar */
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #ccc; }
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #ccc;
+        }
     </style>
 </head>
+
 <body>
     <div id="root"></div>
     <div class="grid-bg"></div>
@@ -190,14 +577,34 @@
             if (!locBox) return false;
             const { col } = boxToXY(locBox, isFutsal);
             const cols = isFutsal ? 8 : 12;
-            return col >= cols - 3; 
+            return col >= cols - 3;
         };
 
         const isInPenaltyBox = (locBox, isFutsal) => {
             if (!locBox) return false;
-            const { col, row } = boxToXY(locBox, isFutsal);
-            const cols = isFutsal ? 8 : 12;
-            return col === (cols - 1) && row >= 2 && row <= 5; // Simplified box for L2R normalized grid
+            if (isFutsal) {
+                return [30, 31].includes(locBox);
+            } else {
+                return [91, 92, 93, 94, 83, 84, 85, 86].includes(locBox);
+            }
+        };
+
+        const isInDefensiveBox = (locBox, isFutsal) => {
+            if (!locBox) return false;
+            if (isFutsal) {
+                return [2, 3].includes(locBox);
+            } else {
+                return [3, 4, 5, 6, 11, 12, 13, 14].includes(locBox);
+            }
+        };
+
+        const isInDefensiveThird = (locBox, isFutsal) => {
+            if (!locBox) return false;
+            if (isFutsal) {
+                return locBox <= 12;
+            } else {
+                return locBox <= 32;
+            }
         };
 
         const isProgressive = (startBox, endBox, isFutsal) => {
@@ -213,78 +620,200 @@
         // =========================================
         function computeStats(events, match) {
             const init = () => ({
+                // 1. Overview
                 goals: 0, shots: 0, sot: 0,
-                pass_total: 0, pass_success: 0, key_passes: 0,
-                tackles: 0, tackle_success: 0, interceptions: 0,
-                dribble_total: 0, dribble_success: 0,
-                fouls: 0, yellow: 0, red: 0,
-                carry: 0, own_goals: 0,
-                corner_goals: 0, fk_goals: 0, penalty_goals: 0,
-                events_count: 0,
-                heatmap: {},
-                // Advanced Math
-                progressive_actions: 0,
-                final_third_entries: 0,
-                box_entries: 0,
-                defensive_actions: 0,
-                final_third_passes: 0,
+                // 2. Passing
+                pass_total: 0, pass_success: 0, progressive_passes: 0, key_passes: 0, assists: 0,
+                goal_kicks: 0, gk_throws: 0, corners: 0, free_kicks: 0, throw_ins: 0,
+                // 3. Attacking
+                final_third_entries: 0, box_entries: 0, shot_creation_actions: 0, deep_completions: 0,
+                shots_inside_box: 0, shots_outside_box: 0, shot_free_kicks: 0, shot_penalties: 0,
+                // 4. Dribbling & Carry
+                dribbles_attempted: 0, dribble_success: 0,
+                dribbles_to_box: 0, dribbles_in_att_third: 0, dribbles_lead_to_shot: 0,
+                carries_successful: 0,
+                progressive_carries: 0,
+                // 5. Defense
+                tackles: 0, interceptions: 0, fouls: 0, yellow: 0, red: 0,
+                tackles_in_box: 0, tackles_in_def_third: 0,
+                interceptions_in_box: 0, interceptions_in_def_third: 0,
+                recoveries_interception: 0, recoveries_tackle: 0,
+                defensive_actions: 0, high_press_actions: 0,
+                // 6. Territory
+                final_third_passes: 0, attacking_third_actions: 0, box_touches: 0,
+                // 7. Possession & Advanced
+                chains: 0, chain_events: 0, progressive_carries: 0, xt_generated: 0,
+                // Base
+                events_count: 0, heatmap: {}, corner_goals: 0, fk_goals: 0, penalty_goals: 0, own_goals: 0
             });
 
             let home = init(), away = init();
             let maxMinute = 0;
             const keyEvents = [];
+
+            // Expected Threat (xT) Base Proxy Matrix (L2R) - Value increases closer to goal (Cols 0-11)
+            // Penalty box gets massive boost. Center gets higher than wings.
+            const getXtValue = (box, isFutsal) => {
+                if (!box) return 0;
+                const { col, row } = boxToXY(box, isFutsal);
+                const cols = isFutsal ? 8 : 12;
+                const rows = isFutsal ? 4 : 8;
+                let value = (col / cols) * 0.1; // Base progression
+                if (col >= cols - 3) value += 0.2; // Final 3rd bump
+                if (isInPenaltyBox(box, isFutsal)) value += 0.5; // Box bump
+                return value;
+            };
+
+            // Sequential Tracking Variables
+            let currentPossessionTeam = null;
+            let currentChainEvents = 0;
+            let lastEvent = null;
+
             const momentumBins = {};
 
-            events.forEach(ev => {
+            events.forEach((ev, idx) => {
                 const isHome = ev.team_id === match.team_a_id;
                 const t = isHome ? home : away;
                 t.events_count++;
 
+                const nextEv = events[idx + 1];
+
                 if (ev.match_minute > maxMinute) maxMinute = ev.match_minute;
 
-                // Heatmap
                 if (ev.location_box) {
                     t.heatmap[ev.location_box] = (t.heatmap[ev.location_box] || 0) + 1;
                 }
 
-                // Momentum (5-min bins)
-                const bin = Math.floor((ev.match_minute || 0) / 5) * 5;
-                if (!momentumBins[bin]) momentumBins[bin] = { home: 0, away: 0 };
-                const successOutcomes = ['Successful', 'Goal', 'Assist', 'SoT Save', 'SoT Block'];
-                if (successOutcomes.includes(ev.outcome)) {
-                    momentumBins[bin][isHome ? 'home' : 'away']++;
+                // Sequential / Chain Logic (Strict)
+                const chainBreakingOutcomes = ['Miss', 'Interception', 'Lost Control', 'Unsuccessful', 'Foul', 'Yellow', 'Red'];
+                const breaksChain = chainBreakingOutcomes.includes(ev.outcome) || ev.action === 'Shot';
+
+                if (!currentPossessionTeam) {
+                    currentPossessionTeam = ev.team_id;
+                    currentChainEvents = 1;
+                } else if (currentPossessionTeam === ev.team_id) {
+                    currentChainEvents++;
+                } else {
+                    // Team changed naturally
+                    const oldT = currentPossessionTeam === match.team_a_id ? home : away;
+                    oldT.chains++;
+                    oldT.chain_events += currentChainEvents;
+                    currentPossessionTeam = ev.team_id;
+                    currentChainEvents = 1;
+                }
+
+                if (breaksChain) {
+                    const currentT = currentPossessionTeam === match.team_a_id ? home : away;
+                    currentT.chains++;
+                    currentT.chain_events += currentChainEvents;
+                    currentPossessionTeam = null; // Next event starts anew
+                    currentChainEvents = 0;
                 }
 
                 // Advanced Base Parsing
                 const endBox = ev.end_location_box;
                 const startBox = ev.location_box;
-                
+
                 const enteredFinalThird = !isInAttackingThird(startBox, match.is_futsal) && isInAttackingThird(endBox, match.is_futsal);
                 const enteredPenaltyBox = !isInPenaltyBox(startBox, match.is_futsal) && isInPenaltyBox(endBox, match.is_futsal);
                 const isProgressiveAction = isProgressive(startBox, endBox, match.is_futsal);
+                const inAttThirdStart = isInAttackingThird(startBox, match.is_futsal);
+                const inBoxEnd = isInPenaltyBox(endBox, match.is_futsal);
+
+                // Attacking Third Action Share
+                if (inAttThirdStart) t.attacking_third_actions++;
+
+                // Box Touches (Strict)
+                if (isInPenaltyBox(startBox, match.is_futsal) && ['Pass Received', 'Carry', 'Dribble', 'Shot'].includes(ev.action)) {
+                    t.box_touches++;
+                }
 
                 // Action-based stats
+                const successOutcomes = ['Successful', 'Goal', 'Assist', 'SoT Save', 'SoT Block'];
+                const isSuccess = successOutcomes.includes(ev.outcome);
+
+                // Momentum (5-min bins)
+                const bin = Math.floor((ev.match_minute || 0) / 5) * 5;
+                if (!momentumBins[bin]) momentumBins[bin] = { home: 0, away: 0 };
+                if (isSuccess) {
+                    momentumBins[bin][isHome ? 'home' : 'away']++;
+                }
+
+                // xT Calculation for successful open play movements
+                if (isSuccess && startBox && endBox && ['Pass', 'Carry', 'Dribble'].includes(ev.action)) {
+                    let xtDiff = getXtValue(endBox, match.is_futsal) - getXtValue(startBox, match.is_futsal);
+                    if (xtDiff > 0) t.xt_generated += xtDiff;
+                }
+
                 switch (ev.action) {
                     case 'Pass':
                         t.pass_total++;
+                        // Tracking specific pass types (Sub-metrics)
+                        if (ev.type === 'Goalkick') t.goal_kicks++;
+                        if (ev.type === 'Goalkeeper Throw') t.gk_throws++;
+                        if (ev.type === 'Corner') t.corners++;
+                        if (ev.type === 'Free Kick') t.free_kicks++;
+                        if (ev.type === 'Throw-in') t.throw_ins++;
+
+                        // strict checking
                         if (ev.outcome === 'Successful' || ev.outcome === 'Assist') {
                             t.pass_success++;
-                            if (ev.type === 'Key Pass') t.key_passes++;
                             if (isInAttackingThird(endBox, match.is_futsal)) t.final_third_passes++;
                             if (enteredFinalThird) t.final_third_entries++;
                             if (enteredPenaltyBox) t.box_entries++;
-                            if (isProgressiveAction) t.progressive_actions++;
+                            if (isProgressiveAction) t.progressive_passes++;
+                            // Deep Completions: Pass into penalty box (exclude crosses)
+                            if (inBoxEnd && ev.type !== 'Cross') t.deep_completions++;
                         }
                         if (ev.outcome === 'Assist') {
-                            keyEvents.push({ ...ev, display: 'Assist', emoji: '👟', isHome });
+                            t.assists++;
+                            keyEvents.push({ ...ev, display: 'Assist', emoji: '👟', isHome, player_name: ev.player_name, jersey_number: ev.jersey_number });
+                        }
+                        if (ev.outcome === 'Interception') {
+                            const interceptorTeamId = isHome ? match.team_b_id : match.team_a_id;
+                            const interceptorT = isHome ? away : home;
+                            interceptorT.interceptions++;
+                            interceptorT.defensive_actions++;
+
+                            if (isInDefensiveBox(startBox, match.is_futsal)) interceptorT.interceptions_in_box++;
+                            if (isInDefensiveThird(startBox, match.is_futsal)) interceptorT.interceptions_in_def_third++;
+
+                            // Ball Recovery logic
+                            if (nextEv && nextEv.team_id === interceptorTeamId) {
+                                interceptorT.recoveries_interception++;
+                            }
+
+                            const { col } = boxToXY(startBox, match.is_futsal);
+                            const cols = match.is_futsal ? 8 : 12;
+                            if (col >= cols - 3) interceptorT.high_press_actions++;
                         }
                         break;
                     case 'Shot':
                         t.shots++;
                         if (['Goal', 'SoT Save', 'SoT Block'].includes(ev.outcome)) t.sot++;
+
+                        // Location based shot stats
+                        if (isInPenaltyBox(ev.location_box, match.is_futsal)) {
+                            t.shots_inside_box++;
+                        } else {
+                            t.shots_outside_box++;
+                        }
+
+                        // Set piece shot stats
+                        if (ev.type === 'Free Kick') t.shot_free_kicks++;
+                        if (ev.type === 'Penalty') t.shot_penalties++;
+
+                        // Shot Creation Action logic (Strict)
+                        if (lastEvent && lastEvent.team_id === ev.team_id) {
+                            t.shot_creation_actions++;
+                            if (lastEvent.action === 'Dribble' && lastEvent.outcome === 'Successful') {
+                                t.dribbles_lead_to_shot++;
+                            }
+                        }
+
                         if (ev.outcome === 'Goal') {
                             t.goals++;
-                            keyEvents.push({ ...ev, display: 'Goal', emoji: '⚽', isHome });
+                            keyEvents.push({ ...ev, display: 'Goal', emoji: '⚽', isHome, player_name: ev.player_name, jersey_number: ev.jersey_number });
                             if (ev.type === 'Corner') t.corner_goals++;
                             if (ev.type === 'Free Kick') t.fk_goals++;
                             if (ev.type === 'Penalty') t.penalty_goals++;
@@ -292,57 +821,71 @@
                         break;
                     case 'Tackle':
                         t.tackles++;
-                        if (ev.outcome === 'Successful') t.tackle_success++;
                         t.defensive_actions++;
-                        break;
-                    case 'Interception':
-                        t.interceptions++;
-                        t.defensive_actions++;
-                        break;
-                    case 'Foul':
-                         // Usually fouls are outcome, but if tagged as action
-                         t.defensive_actions++;
-                         break;
-                    case 'Carry':
-                        t.carry++;
+                        if (inAttThirdStart) t.high_press_actions++;
+
+                        if (isInDefensiveBox(startBox, match.is_futsal)) t.tackles_in_box++;
+                        if (isInDefensiveThird(startBox, match.is_futsal)) t.tackles_in_def_third++;
+
                         if (ev.outcome === 'Successful') {
+                            // Ball Recovery logic
+                            if (nextEv && nextEv.team_id === ev.team_id) {
+                                t.recoveries_tackle++;
+                            }
+                        }
+
+                        if (ev.outcome === 'Foul') {
+                            t.fouls++;
+                        }
+                        if (ev.outcome === 'Yellow') {
+                            t.yellow++;
+                            keyEvents.push({ ...ev, display: 'Yellow Card', emoji: '🟨', isHome, player_name: ev.player_name, jersey_number: ev.jersey_number });
+                        }
+                        if (ev.outcome === 'Red') {
+                            t.red++;
+                            keyEvents.push({ ...ev, display: 'Red Card', emoji: '🟥', isHome, player_name: ev.player_name, jersey_number: ev.jersey_number });
+                        }
+                        break;
+                    case 'Carry':
+                        if (ev.outcome === 'Successful') {
+                            t.carries_successful++;
                             if (enteredFinalThird) t.final_third_entries++;
                             if (enteredPenaltyBox) t.box_entries++;
-                            if (isProgressiveAction) t.progressive_actions++;
+                            if (isProgressiveAction) t.progressive_carries++;
                         }
                         break;
                     case 'Dribble':
-                        t.dribble_total++;
+                        t.dribbles_attempted++;
                         if (ev.outcome === 'Successful') {
                             t.dribble_success++;
+                            if (!isInPenaltyBox(startBox, match.is_futsal) && isInPenaltyBox(endBox, match.is_futsal)) {
+                                t.dribbles_to_box++;
+                            }
+                            if (isInAttackingThird(startBox, match.is_futsal) || isInAttackingThird(endBox, match.is_futsal)) {
+                                t.dribbles_in_att_third++;
+                            }
                             if (enteredFinalThird) t.final_third_entries++;
                             if (enteredPenaltyBox) t.box_entries++;
-                            if (isProgressiveAction) t.progressive_actions++;
                         }
                         break;
                     case 'Own Goal':
                         t.own_goals++;
-                        // Own goal counts for the OTHER team
                         if (isHome) away.goals++;
                         else home.goals++;
-                        keyEvents.push({ ...ev, display: 'Own Goal', emoji: '🔴', isHome });
+                        keyEvents.push({ ...ev, display: 'Own Goal', emoji: '🔴', isHome, player_name: ev.player_name, jersey_number: ev.jersey_number });
                         break;
                 }
 
-                // Collect Def Actions cleanly via outcome properties 
-                if (ev.outcome === 'Foul') {
-                    t.fouls++;
-                    t.defensive_actions++;
-                }
-                if (ev.outcome === 'Yellow') {
-                    t.yellow++;
-                    keyEvents.push({ ...ev, display: 'Yellow Card', emoji: '🟨', isHome });
-                }
-                if (ev.outcome === 'Red') {
-                    t.red++;
-                    keyEvents.push({ ...ev, display: 'Red Card', emoji: '🟥', isHome });
-                }
+                // Track trailing event for sequences
+                lastEvent = ev;
             });
+
+            // Close final chain iteration
+            if (currentPossessionTeam !== null && currentChainEvents > 0) {
+                const oldT = currentPossessionTeam === match.team_a_id ? home : away;
+                oldT.chains++;
+                oldT.chain_events += currentChainEvents;
+            }
 
             // Sort key events by timestamp
             keyEvents.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
@@ -357,8 +900,8 @@
                 });
             }
 
-            const totalEvents = home.events_count + away.events_count;
-            const possession = totalEvents === 0 ? 50 : Math.round((home.events_count / totalEvents) * 100);
+            const totalPasses = home.pass_total + away.pass_total;
+            const possession = totalPasses === 0 ? 50 : Math.round((home.pass_total / totalPasses) * 100);
 
             const pct = (n, d) => d === 0 ? 0 : Math.round((n / d) * 100);
 
@@ -371,7 +914,7 @@
             events.forEach(ev => {
                 const isHome = ev.team_id === match.team_a_id;
                 let shift = 0;
-                
+
                 // Helper to check if event is in attacking 3rd
                 const isInAttackingThird = (locBox) => {
                     if (!locBox) return false;
@@ -384,7 +927,7 @@
                     shift = 10.0;
                 } else if (ev.action === 'Own Goal') {
                     // Own goal gives points to the OTHER team
-                    if (isHome) aProb += 10.0, hProb -= 10.0; 
+                    if (isHome) aProb += 10.0, hProb -= 10.0;
                     else hProb += 10.0, aProb -= 10.0;
                 } else if (ev.outcome === 'Red') {
                     shift = -7.0; // penalizes the team
@@ -431,22 +974,53 @@
             const fieldTiltHome = pct(home.final_third_passes, totalFtPasses);
             const fieldTiltAway = 100 - fieldTiltHome;
 
+            // Attack Third Action Share
+            const totalAttActions = home.attacking_third_actions + away.attacking_third_actions;
+            const attThirdHome = pct(home.attacking_third_actions, totalAttActions);
+            const attThirdAway = 100 - attThirdHome;
+
+            const homePossLength = home.chains === 0 ? 0 : (home.chain_events / home.chains);
+            const awayPossLength = away.chains === 0 ? 0 : (away.chain_events / away.chains);
+
+            // Possession Proxy Algorithm (Share of Total Passes Built-up)
+            const passProxyPossession = (home.pass_total + away.pass_total) === 0 ? 50 : pct(home.pass_total, home.pass_total + away.pass_total);
+
+            const passAccHome = pct(home.pass_success, home.pass_total);
+            const passAccAway = pct(away.pass_success, away.pass_total);
+            const convRateHome = pct(home.goals, home.shots);
+            const convRateAway = pct(away.goals, away.shots);
+
+            const dribbleAccHome = pct(home.dribble_success, home.dribbles_attempted);
+            const dribbleAccAway = pct(away.dribble_success, away.dribbles_attempted);
+
             return {
-                home, away, maxMinute, keyEvents, momentumData, possession,
-                passAccHome: pct(home.pass_success, home.pass_total),
-                passAccAway: pct(away.pass_success, away.pass_total),
+                home, away, maxMinute, keyEvents, possession: passProxyPossession,
+                // Passing
+                passAccHome,
+                passAccAway,
+                // Dribbling
+                dribbleAccHome,
+                dribbleAccAway,
+                // Overview
                 shotAccHome: pct(home.sot, home.shots),
                 shotAccAway: pct(away.sot, away.shots),
-                tackleAccHome: pct(home.tackle_success, home.tackles),
-                tackleAccAway: pct(away.tackle_success, away.tackles),
-                dribbleAccHome: pct(home.dribble_success, home.dribble_total),
-                dribbleAccAway: pct(away.dribble_success, away.dribble_total),
+                goalConvHome: pct(home.goals, home.shots),
+                goalConvAway: pct(away.goals, away.shots),
+                // Dribble
+                dribbleAccHome: pct(home.dribble_success, home.dribbles_attempted),
+                dribbleAccAway: pct(away.dribble_success, away.dribbles_attempted),
+                // Pressing
+                highPressHome: pct(home.high_press_actions, home.defensive_actions),
+                highPressAway: pct(away.high_press_actions, away.defensive_actions),
+                convRateHome, convRateAway,
                 winProbHome: hProb, winProbAway: aProb,
                 isLive: match.status === 'Live',
                 // Advanced 
                 ppdaHome: parseFloat(ppdaHomeStr) || 0,
                 ppdaAway: parseFloat(ppdaAwayStr) || 0,
-                fieldTiltHome, fieldTiltAway
+                fieldTiltHome, fieldTiltAway,
+                attThirdHome, attThirdAway,
+                homePossLength, awayPossLength
             };
         }
 
@@ -465,7 +1039,7 @@
                                 strokeDasharray={c} strokeDashoffset={offset} strokeLinecap="square"
                                 style={{ transition: 'stroke-dashoffset 1s ease' }} />
                         </svg>
-                        <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:900 }}>
+                        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 900 }}>
                             {value}%
                         </div>
                     </div>
@@ -547,8 +1121,8 @@
                     <div className="pitch-wrap">
                         <svg viewBox={`0 0 ${vW} ${vH}`} preserveAspectRatio="xMidYMid meet">
                             <rect x="0" y="0" width={vW} height={vH} fill="#fff" rx="2" stroke="#000" strokeWidth="2" />
-                            <line x1={vW/2} y1="0" x2={vW/2} y2={vH} stroke="#ddd" strokeWidth="1" />
-                            <circle cx={vW/2} cy={vH/2} r={isFutsal ? 40 : 55} fill="none" stroke="#ddd" strokeWidth="1" />
+                            <line x1={vW / 2} y1="0" x2={vW / 2} y2={vH} stroke="#ddd" strokeWidth="1" />
+                            <circle cx={vW / 2} cy={vH / 2} r={isFutsal ? 40 : 55} fill="none" stroke="#ddd" strokeWidth="1" />
                             {shots.map((s, i) => {
                                 const { col, row } = boxToXY(s.location_box, isFutsal);
                                 const cx = col * bW + bW / 2;
@@ -561,24 +1135,26 @@
                                 return (
                                     <g key={i}>
                                         <circle cx={cx} cy={cy} r={s.outcome === 'Goal' ? 10 : 7} fill={fill} stroke="#000" strokeWidth="1.5" opacity="0.85" />
-                                        {s.outcome === 'Goal' && <text x={cx} y={cy+4} textAnchor="middle" fontSize="10" fontWeight="900" fill="#fff">G</text>}
+                                        {s.outcome === 'Goal' && <text x={cx} y={cy + 4} textAnchor="middle" fontSize="10" fontWeight="900" fill="#fff">G</text>}
                                     </g>
                                 );
                             })}
                         </svg>
                     </div>
                     <div className="flex justify-around text-xs font-bold mt-2">
-                        <span><span style={{display:'inline-block', width:10, height:10, background:'var(--green)', border:'1px solid #000', marginRight:4, verticalAlign:'middle'}}></span>GOAL</span>
-                        <span><span style={{display:'inline-block', width:10, height:10, background:'var(--red)', border:'1px solid #000', marginRight:4, verticalAlign:'middle'}}></span>ON TARGET</span>
-                        <span><span style={{display:'inline-block', width:10, height:10, background:'#ccc', border:'1px solid #000', marginRight:4, verticalAlign:'middle'}}></span>OFF/BLOCKED</span>
+                        <span><span style={{ display: 'inline-block', width: 10, height: 10, background: 'var(--green)', border: '1px solid #000', marginRight: 4, verticalAlign: 'middle' }}></span>GOAL</span>
+                        <span><span style={{ display: 'inline-block', width: 10, height: 10, background: 'var(--red)', border: '1px solid #000', marginRight: 4, verticalAlign: 'middle' }}></span>ON TARGET</span>
+                        <span><span style={{ display: 'inline-block', width: 10, height: 10, background: '#ccc', border: '1px solid #000', marginRight: 4, verticalAlign: 'middle' }}></span>OFF/BLOCKED</span>
                     </div>
                 </div>
             );
         }
 
-        function Heatmap({ events, match, teamId, teamName, color }) {
-            const teamEvents = events.filter(e => e.team_id === teamId && e.location_box);
-            if (teamEvents.length === 0) return null;
+        function FilteredHeatmap({ events, match, teamId, teamName, color, isEndLocation = false }) {
+            const [filterAction, setFilterAction] = useState('Pass');
+            const [filterType, setFilterType] = useState('ALL');
+            const [filterOutcome, setFilterOutcome] = useState('Successful');
+
             const isFutsal = match.is_futsal;
             const cols = isFutsal ? 8 : 12;
             const rows = isFutsal ? 4 : 8;
@@ -586,30 +1162,83 @@
             const vW = 600, vH = isFutsal ? 300 : 400;
             const bW = vW / cols, bH = vH / rows;
 
+            // Hierarchical Filter Data
+            const actions = [...new Set(events.map(e => e.action))].filter(Boolean);
+            const availableTypes = [...new Set(events.filter(e => e.action === filterAction).map(e => e.type))].filter(Boolean);
+            const availableOutcomes = [...new Set(events.filter(e => e.action === filterAction && (filterType === 'ALL' || e.type === filterType)).map(e => e.outcome))].filter(Boolean);
+
+            const filteredEvents = events.filter(e => {
+                if (e.team_id !== teamId) return false;
+                const loc = isEndLocation ? e.end_location_box : e.location_box;
+                if (!loc) return false;
+                if (e.action !== filterAction) return false;
+                if (filterType !== 'ALL' && e.type !== filterType) return false;
+                if (filterOutcome !== 'ALL' && e.outcome !== filterOutcome) return false;
+                return true;
+            });
+
             const counts = {};
-            teamEvents.forEach(e => { counts[e.location_box] = (counts[e.location_box] || 0) + 1; });
+            filteredEvents.forEach(e => {
+                const loc = isEndLocation ? e.end_location_box : e.location_box;
+                counts[loc] = (counts[loc] || 0) + 1;
+            });
             const maxCount = Math.max(1, ...Object.values(counts));
 
             return (
-                <div>
-                    <div className="text-xs font-black uppercase tracking-tight mb-2" style={{ color }}>{teamName}</div>
-                    <div className="pitch-wrap">
+                <div className="mb-8">
+                    <div className="flex justify-between items-center mb-2">
+                        <div className="text-xs font-black uppercase tracking-tight" style={{ color }}>{teamName} ({isEndLocation ? 'END' : 'START'})</div>
+                        <div className="text-[10px] font-black bg-black text-white px-2 py-0.5" style={{ borderRadius: 2 }}>COUNT: {filteredEvents.length}</div>
+                    </div>
+
+                    {/* Hierarchical Filters */}
+                    <div className="flex flex-wrap gap-1 mb-3 bg-gray-100 p-1" style={{ border: '1px solid #000' }}>
+                        <select value={filterAction} onChange={e => { setFilterAction(e.target.value); setFilterType('ALL'); setFilterOutcome('ALL'); }} className="h-map-select">
+                            {actions.map(a => <option key={a} value={a}>{a.toUpperCase()}</option>)}
+                        </select>
+                        <select value={filterType} onChange={e => { setFilterType(e.target.value); setFilterOutcome('ALL'); }} className="h-map-select">
+                            <option value="ALL">ALL TYPES</option>
+                            {availableTypes.map(t => <option key={t} value={t}>{t.toUpperCase()}</option>)}
+                        </select>
+                        <select value={filterOutcome} onChange={e => setFilterOutcome(e.target.value)} className="h-map-select">
+                            <option value="ALL">ALL OUTCOMES</option>
+                            {availableOutcomes.map(o => <option key={o} value={o}>{o.toUpperCase()}</option>)}
+                        </select>
+                    </div>
+
+                    <div className="pitch-wrap" style={{ position: 'relative' }}>
                         <svg viewBox={`0 0 ${vW} ${vH}`} preserveAspectRatio="xMidYMid meet">
-                            <rect x="0" y="0" width={vW} height={vH} fill="#fff" rx="2" stroke="#000" strokeWidth="2" />
-                            {Array.from({length: totalBoxes}, (_, i) => {
+                            {/* Grass & Perimeter */}
+                            <rect x="0" y="0" width={vW} height={vH} fill="#fff" stroke="#000" strokeWidth="2" />
+
+                            {/* Heat Cells */}
+                            {Array.from({ length: totalBoxes }, (_, i) => {
                                 const box = i + 1;
                                 const { col, row } = boxToXY(box, isFutsal);
                                 const count = counts[box] || 0;
                                 const intensity = count / maxCount;
                                 return (
-                                    <rect key={box} x={col*bW} y={row*bH} width={bW} height={bH}
-                                        fill={count > 0 ? color : 'transparent'}
-                                        opacity={count > 0 ? 0.15 + intensity * 0.7 : 0}
-                                        stroke="#eee" strokeWidth="0.5" />
+                                    <g key={box}>
+                                        <rect x={col * bW} y={row * bH} width={bW} height={bH}
+                                            fill={count > 0 ? color : 'transparent'}
+                                            opacity={count > 0 ? 0.1 + intensity * 0.75 : 0}
+                                            stroke="#eee" strokeWidth="0.5" />
+                                        {count > 0 && (
+                                            <text x={col * bW + bW / 2} y={row * bH + bH / 2 + 4} textAnchor="middle" fontSize="10" fontWeight="900" fill={intensity > 0.5 ? '#fff' : '#000'} opacity="0.9">
+                                                {count}
+                                            </text>
+                                        )}
+                                    </g>
                                 );
                             })}
-                            <line x1={vW/2} y1="0" x2={vW/2} y2={vH} stroke="rgba(0,0,0,0.15)" strokeWidth="1" />
-                            <circle cx={vW/2} cy={vH/2} r={isFutsal?40:55} fill="none" stroke="rgba(0,0,0,0.1)" strokeWidth="1" />
+
+                            {/* Pitch Clear Lines */}
+                            <line x1={vW / 2} y1="0" x2={vW / 2} y2={vH} stroke="#000" strokeWidth="1" strokeDasharray="4" opacity="0.3" />
+                            <circle cx={vW / 2} cy={vH / 2} r={isFutsal ? 40 : 55} fill="none" stroke="#000" strokeWidth="1" strokeDasharray="4" opacity="0.3" />
+
+                            {/* Penalty Boxes */}
+                            <rect x="0" y={vH * 0.25} width={vW * 0.15} height={vH * 0.5} fill="none" stroke="#000" strokeWidth="1" opacity="0.3" />
+                            <rect x={vW * 0.85} y={vH * 0.25} width={vW * 0.15} height={vH * 0.5} fill="none" stroke="#000" strokeWidth="1" opacity="0.3" />
                         </svg>
                     </div>
                 </div>
@@ -628,7 +1257,7 @@
                             <div key={i} className="timeline-item">
                                 <div className="timeline-badge" style={{
                                     background: ev.display === 'Goal' ? 'var(--green)' : ev.display === 'Red Card' ? 'var(--red)' : ev.display === 'Yellow Card' ? 'var(--yellow)' : '#eee',
-                                    color: ['Goal','Red Card'].includes(ev.display) ? '#fff' : '#000',
+                                    color: ['Goal', 'Red Card'].includes(ev.display) ? '#fff' : '#000',
                                 }}>
                                     {ev.emoji}
                                 </div>
@@ -668,8 +1297,8 @@
                 }
             });
 
-            const scorerList = Object.values(scorers).sort((a,b) => b.count - a.count);
-            const assistList = Object.values(assists).sort((a,b) => b.count - a.count);
+            const scorerList = Object.values(scorers).sort((a, b) => b.count - a.count);
+            const assistList = Object.values(assists).sort((a, b) => b.count - a.count);
             const cardList = Object.values(cards);
 
             if (scorerList.length === 0 && assistList.length === 0 && cardList.length === 0) return null;
@@ -844,6 +1473,8 @@
             const [events, setEvents] = useState([]);
             const [loading, setLoading] = useState(true);
             const [activeTab, setActiveTab] = useState('overview');
+            const [selectedHalf, setSelectedHalf] = useState('ALL');
+            const [showEndHeatmap, setShowEndHeatmap] = useState(false);
 
             const fetchEvents = async () => {
                 const { data } = await db.from('events').select('*')
@@ -871,7 +1502,15 @@
                 return () => { db.removeChannel(channel); clearInterval(interval); };
             }, [initialMatch.id]);
 
-            const stats = useMemo(() => computeStats(events, match), [events, match]);
+            const stats = useMemo(() => {
+                const filtered = events.filter(ev => {
+                    if (selectedHalf === 'ALL') return true;
+                    if (selectedHalf === '1ST') return ev.half === '1st';
+                    if (selectedHalf === '2ND') return ev.half === '2nd';
+                    return true;
+                });
+                return computeStats(filtered, match);
+            }, [events, match, selectedHalf]);
 
             if (loading) return <div className="text-xs font-bold animate-pulse uppercase">SYNCHRONIZING FEED...</div>;
 
@@ -882,7 +1521,7 @@
             const scoreA = stats.home.goals;
             const scoreB = stats.away.goals;
 
-            const tabs = ['overview', 'advanced', 'shots', 'heatmap', 'timeline', 'players'];
+            const tabs = ['overview', 'passing', 'attacking', 'dribbling', 'defense', 'advanced', 'heatmap'];
 
             return (
                 <div className="pb-12">
@@ -918,6 +1557,22 @@
                         </div>
                     </div>
 
+                    {/* Half Filter (Only after match ends) */}
+                    {!stats.isLive && (
+                        <div className="flex gap-1 mb-4 bg-black p-1" style={{ borderRadius: 4 }}>
+                            {['ALL', '1ST', '2ND'].map(sh => (
+                                <button
+                                    key={sh}
+                                    onClick={() => setSelectedHalf(sh)}
+                                    className={`flex-1 text-[10px] font-black py-1 px-2 ${selectedHalf === sh ? 'bg-white text-black' : 'text-white'}`}
+                                    style={{ border: 'none', cursor: 'pointer', transition: '0.2s', borderRadius: 2 }}
+                                >
+                                    {sh === 'ALL' ? 'FULL MATCH' : `${sh} HALF`}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
                     {/* Tabs */}
                     <div className="tab-bar">
                         {tabs.map(tab => (
@@ -930,121 +1585,166 @@
                     {/* Tab Content */}
                     {activeTab === 'overview' && (
                         <div>
-                            <div className="t-box t-shadow p-4 mb-4">
-                                {stats.isLive && (
-                                    <TugOfWar label="WIN PROBABILITY" home={stats.winProbHome} away={stats.winProbAway} />
-                                )}
+                            {stats.isLive && (
+                                <div className="t-box t-shadow p-3 mb-4 text-center">
+                                    <div className="text-xs font-black uppercase mb-2">WIN PROBABILITY</div>
+                                    <div className="flex justify-between items-center text-sm font-black mx-4">
+                                        <span className="text-red">{stats.winProbHome}%</span>
+                                        <div className="stat-track flex-1 mx-4">
+                                            <div className="stat-fill-red" style={{ width: `${stats.winProbHome}%` }}></div>
+                                            <div className="stat-fill-blue" style={{ width: `${stats.winProbAway}%` }}></div>
+                                        </div>
+                                        <span className="text-blue">{stats.winProbAway}%</span>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="t-box p-3 mb-4">
+                                <div className="text-xs font-black uppercase mb-3" style={{ borderBottom: '2px solid #000', paddingBottom: 4 }}>KEY PERFORMANCE</div>
                                 <TugOfWar label="POSSESSION" home={stats.possession} away={100 - stats.possession} />
-                                <TugOfWar label="PASS ACCURACY" home={stats.passAccHome} away={stats.passAccAway} />
-                                <TugOfWar label="SHOT ACCURACY" home={stats.shotAccHome} away={stats.shotAccAway} />
-                                {(stats.home.tackles > 0 || stats.away.tackles > 0) && (
-                                    <TugOfWar label="TACKLE SUCCESS" home={stats.tackleAccHome} away={stats.tackleAccAway} />
-                                )}
-                            </div>
-
-                            {/* Shooting & Passing Gauges */}
-                            <div className="grid grid-2 gap-3 mb-4">
-                                <div className="t-box p-3 text-center" style={{ background: 'var(--gray-light)' }}>
-                                    <div className="flex justify-around mb-2">
-                                        <CircularGauge value={stats.shotAccHome} color="var(--red)" total={stats.home.shots} />
-                                        <CircularGauge value={stats.shotAccAway} color="var(--blue)" total={stats.away.shots} />
-                                    </div>
-                                    <div className="text-xs font-black uppercase tracking-tight" style={{ borderTop: '1px solid var(--gray-200)', paddingTop: 8 }}>SHOT ACCURACY</div>
-                                </div>
-                                <div className="t-box p-3 text-center" style={{ background: 'var(--gray-light)' }}>
-                                    <div className="flex justify-around mb-2">
-                                        <CircularGauge value={stats.passAccHome} color="var(--red)" total={stats.home.pass_total} />
-                                        <CircularGauge value={stats.passAccAway} color="var(--blue)" total={stats.away.pass_total} />
-                                    </div>
-                                    <div className="text-xs font-black uppercase tracking-tight" style={{ borderTop: '1px solid var(--gray-200)', paddingTop: 8 }}>PASS ACCURACY</div>
-                                </div>
-                            </div>
-
-                            {/* Compact Stats */}
-                            <div className="grid grid-2 gap-3 mb-4">
-                                <div className="t-box p-3">
-                                    <div className="text-xs font-black uppercase mb-2" style={{ borderBottom: '2px solid #000', paddingBottom: 4 }}>ATTACK</div>
-                                    <CompactStat label="SHOTS" homeVal={stats.home.shots} awayVal={stats.away.shots} />
-                                    <CompactStat label="ON TARGET" homeVal={stats.home.sot} awayVal={stats.away.sot} />
-                                    <CompactStat label="PASSES" homeVal={stats.home.pass_total} awayVal={stats.away.pass_total} />
-                                    <CompactStat label="CARRIES" homeVal={stats.home.carry} awayVal={stats.away.carry} />
-                                    <CompactStat label="DRIBBLES" homeVal={stats.home.dribble_total} awayVal={stats.away.dribble_total} />
-                                </div>
-                                <div className="t-box p-3">
-                                    <div className="text-xs font-black uppercase mb-2" style={{ borderBottom: '2px solid #000', paddingBottom: 4 }}>DEFENSE</div>
-                                    <CompactStat label="TACKLES" homeVal={stats.home.tackles} awayVal={stats.away.tackles} />
-                                    <CompactStat label="FOULS" homeVal={stats.home.fouls} awayVal={stats.away.fouls} />
-                                    <CompactStat label="YELLOW" homeVal={stats.home.yellow} awayVal={stats.away.yellow} />
-                                    <CompactStat label="RED" homeVal={stats.home.red} awayVal={stats.away.red} />
-                                    {(stats.home.corner_goals + stats.away.corner_goals + stats.home.fk_goals + stats.away.fk_goals + stats.home.penalty_goals + stats.away.penalty_goals > 0) && (
-                                        <CompactStat label="SET PIECE ⚽" homeVal={stats.home.corner_goals + stats.home.fk_goals + stats.home.penalty_goals} awayVal={stats.away.corner_goals + stats.away.fk_goals + stats.away.penalty_goals} />
-                                    )}
-                                </div>
+                                <TugOfWar label="FIELD TILT" home={stats.fieldTiltHome} away={stats.fieldTiltAway} />
+                                <CompactStat label="TOTAL SHOTS" homeVal={stats.home.shots} awayVal={stats.away.shots} />
+                                <CompactStat label="PASSES SUCCESSFUL" homeVal={stats.home.pass_success} awayVal={stats.away.pass_success} />
+                                <CompactStat label="TACKLES & INT" homeVal={stats.home.tackles + stats.home.interceptions} awayVal={stats.away.tackles + stats.away.interceptions} />
+                                <CompactStat label="PPDA" homeVal={stats.ppdaHome} awayVal={stats.ppdaAway} />
+                                <CompactStat label="CARDS (Y/R)" homeVal={`${stats.home.yellow}/${stats.home.red}`} awayVal={`${stats.away.yellow}/${stats.away.red}`} />
                             </div>
 
                             <MomentumChart data={stats.momentumData} teamAName={teamAName} teamBName={teamBName} />
                         </div>
                     )}
 
-                    {activeTab === 'advanced' && (
+                    {activeTab === 'passing' && (
                         <div>
-                            <div className="t-box t-shadow p-4 mb-4">
-                                <TugOfWar label="FIELD TILT" home={stats.fieldTiltHome} away={stats.fieldTiltAway} />
-                                
-                                {/* PPDA Custom Presentation (Lower is better) */}
-                                <div className="mb-4">
-                                    <div className="flex justify-between mb-1 text-xs font-black uppercase tracking-tight">
-                                        <span className="text-red">{stats.ppdaHome}</span>
-                                        <span className="text-muted tracking-widest">PPDA PRESS</span>
-                                        <span className="text-blue">{stats.ppdaAway}</span>
-                                    </div>
-                                    <div className="stat-track" style={{ background: 'transparent', border: 'none', gap: 4 }}>
-                                       <div style={{ flex: 1, background: 'var(--gray-200)', border: '1px solid #000', position: 'relative' }}>
-                                           <div className="stat-fill-red" style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: `${Math.min(100, (15 - Math.min(15, stats.ppdaHome))/15 * 100)}%` }}></div>
-                                       </div>
-                                       <div style={{ flex: 1, background: 'var(--gray-200)', border: '1px solid #000', position: 'relative' }}>
-                                            <div className="stat-fill-blue" style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${Math.min(100, (15 - Math.min(15, stats.ppdaAway))/15 * 100)}%`, borderLeft: 'none' }}></div>
-                                       </div>
-                                    </div>
-                                    <div className="text-center text-muted" style={{ fontSize: 9, marginTop: 4 }}>* Lower PPDA = Higher Pressing Intensity</div>
-                                </div>
+                            <div className="t-box p-3 mb-4">
+                                <div className="text-xs font-black uppercase mb-3" style={{ borderBottom: '2px solid #000', paddingBottom: 4 }}>PASSING SUMMARY</div>
+                                <CompactStat label="TOTAL PASS (SUCCESSFUL)" homeVal={`${stats.home.pass_total} (${stats.home.pass_success})`} awayVal={`${stats.away.pass_total} (${stats.away.pass_success})`} />
+                                <CompactStat label="PASS ACCURACY %" homeVal={`${stats.passAccHome}%`} awayVal={`${stats.passAccAway}%`} />
+                                <CompactStat label="PROG. PASSES" homeVal={stats.home.progressive_passes} awayVal={stats.away.progressive_passes} />
+                                <CompactStat label="ASSISTS" homeVal={stats.home.assists} awayVal={stats.away.assists} />
+                                <CompactStat label="PASSES IN ATTACK 3RD" homeVal={stats.home.final_third_passes} awayVal={stats.away.final_third_passes} />
                             </div>
-
-                            <div className="grid grid-2 gap-3 mb-4">
-                                <div className="t-box p-3">
-                                    <div className="text-xs font-black uppercase mb-2" style={{ borderBottom: '2px solid #000', paddingBottom: 4 }}>PROGRESSION</div>
-                                    <CompactStat label="PROG. ACTIONS" homeVal={stats.home.progressive_actions} awayVal={stats.away.progressive_actions} />
-                                    <CompactStat label="KEY PASSES" homeVal={stats.home.key_passes} awayVal={stats.away.key_passes} />
-                                </div>
-                                <div className="t-box p-3">
-                                    <div className="text-xs font-black uppercase mb-2" style={{ borderBottom: '2px solid #000', paddingBottom: 4 }}>TERRITORY</div>
-                                    <CompactStat label="FINAL 3RD ENTRIES" homeVal={stats.home.final_third_entries} awayVal={stats.away.final_third_entries} />
-                                    <CompactStat label="BOX ENTRIES" homeVal={stats.home.box_entries} awayVal={stats.away.box_entries} />
-                                </div>
+                            <div className="t-box p-3 mb-4">
+                                <div className="text-xs font-black uppercase mb-3" style={{ borderBottom: '2px solid #000', paddingBottom: 4 }}>SET PIECES & GK</div>
+                                <CompactStat label="GOAL KICKS" homeVal={stats.home.goal_kicks} awayVal={stats.away.goal_kicks} />
+                                <CompactStat label="GK THROW" homeVal={stats.home.gk_throws} awayVal={stats.away.gk_throws} />
+                                <CompactStat label="CORNERS" homeVal={stats.home.corners} awayVal={stats.away.corners} />
+                                <CompactStat label="FREE KICK" homeVal={stats.home.free_kicks} awayVal={stats.away.free_kicks} />
+                                <CompactStat label="THROW IN" homeVal={stats.home.throw_ins} awayVal={stats.away.throw_ins} />
                             </div>
-
                         </div>
                     )}
 
-                    {activeTab === 'shots' && (
-                        <ShotMap events={events} match={match} />
+                    {activeTab === 'attacking' && (
+                        <div>
+                            <div className="t-box p-3 mb-4">
+                                <div className="text-xs font-black uppercase mb-3" style={{ borderBottom: '2px solid #000', paddingBottom: 4 }}>ATTACKING PERFORMANCE</div>
+                                <CompactStat label="TOTAL SHOT" homeVal={stats.home.shots} awayVal={stats.away.shots} />
+                                <CompactStat label="SHOT ON TARGET" homeVal={stats.home.sot} awayVal={stats.away.sot} />
+                                <CompactStat label="CONVERSION RATE" homeVal={`${stats.convRateHome}%`} awayVal={`${stats.convRateAway}%`} />
+                                <CompactStat label="SHOT INSIDE BOX" homeVal={stats.home.shots_inside_box} awayVal={stats.away.shots_inside_box} />
+                                <CompactStat label="SHOT OUTSIDE BOX" homeVal={stats.home.shots_outside_box} awayVal={stats.away.shots_outside_box} />
+                                <CompactStat label="FREE KICK" homeVal={stats.home.shot_free_kicks} awayVal={stats.away.shot_free_kicks} />
+                                <CompactStat label="PENALTY" homeVal={stats.home.shot_penalties} awayVal={stats.away.shot_penalties} />
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'dribbling' && (
+                        <div>
+                            <div className="t-box p-3 mb-4">
+                                <div className="text-xs font-black uppercase mb-3" style={{ borderBottom: '2px solid #000', paddingBottom: 4 }}>DRIBBLING & CARRIES</div>
+                                <CompactStat label="SUCCESS DRIBBLES TO BOX" homeVal={stats.home.dribbles_to_box} awayVal={stats.away.dribbles_to_box} />
+                                <CompactStat label="SUCCESS DRIBBLES IN ATT 3RD" homeVal={stats.home.dribbles_in_att_third} awayVal={stats.away.dribbles_in_att_third} />
+                                <CompactStat label="TOTAL DRIBBLES (SUCCESSFUL)" homeVal={`${stats.home.dribbles_attempted} (${stats.home.dribble_success})`} awayVal={`${stats.away.dribbles_attempted} (${stats.away.dribble_success})`} />
+                                <CompactStat label="DRIBBLE SUCCESS %" homeVal={`${stats.dribbleAccHome}%`} awayVal={`${stats.dribbleAccAway}%`} />
+                                <CompactStat label="DRIBBLE LEAD TO SHOT" homeVal={stats.home.dribbles_lead_to_shot} awayVal={stats.away.dribbles_lead_to_shot} />
+                                <CompactStat label="CARRY" homeVal={stats.home.carries_successful} awayVal={stats.away.carries_successful} />
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'defense' && (
+                        <div>
+                            <div className="t-box p-3 mb-4">
+                                <div className="text-xs font-black uppercase mb-3" style={{ borderBottom: '2px solid #000', paddingBottom: 4 }}>DEFENSIVE ACTIONS</div>
+                                <CompactStat label="TACKLES" homeVal={stats.home.tackles} awayVal={stats.away.tackles} />
+                                <CompactStat label="PASS INTERCEPTIONS" homeVal={stats.home.interceptions} awayVal={stats.away.interceptions} />
+                                <CompactStat label="TACKLES IN BOX" homeVal={stats.home.tackles_in_box} awayVal={stats.away.tackles_in_box} />
+                                <CompactStat label="TACKLES IN DEF 3RD" homeVal={stats.home.tackles_in_def_third} awayVal={stats.away.tackles_in_def_third} />
+                                <CompactStat label="PASS INTERCEPT IN BOX" homeVal={stats.home.interceptions_in_box} awayVal={stats.away.interceptions_in_box} />
+                                <CompactStat label="PASS INTERCEPT IN DEF 3RD" homeVal={stats.home.interceptions_in_def_third} awayVal={stats.away.interceptions_in_def_third} />
+                            </div>
+                            <div className="t-box p-3 mb-4">
+                                <div className="text-xs font-black uppercase mb-3" style={{ borderBottom: '2px solid #000', paddingBottom: 4 }}>PRESSING INTENSITY</div>
+                                <CompactStat label="PPDA" homeVal={stats.ppdaHome} awayVal={stats.ppdaAway} />
+                                <CompactStat label="HIGH PRESS %" homeVal={`${stats.highPressHome}%`} awayVal={`${stats.highPressAway}%`} />
+                            </div>
+                            <div className="text-center text-[3px] text-muted font-bold mt-2 px-2 leading-normal uppercase">
+                                * PPDA (Passes Per Defensive Action): (Opponent Passes) / (Defensive Actions).<br />
+                                <span className="opacity-75 font-normal">Intuition: Measures pressing intensity. A LOWER number means more aggressive pressing.</span><br />
+                                * HIGH PRESS %: (Defensive Actions in Attacking 3rd) / (Total Defensive Actions) * 100.<br />
+                                <span className="opacity-75 font-normal">Intuition: Measures how high up the pitch a team defends. A HIGHER % indicates a high-block strategy.</span>
+                            </div>
+                            <div className="t-box p-3 mb-4">
+                                <div className="text-xs font-black uppercase mb-3" style={{ borderBottom: '2px solid #000', paddingBottom: 4 }}>BALL RECOVERIES</div>
+                                <CompactStat label="RECOVERY WITH INTERCEPT" homeVal={stats.home.recoveries_interception} awayVal={stats.away.recoveries_interception} />
+                                <CompactStat label="RECOVERY WITH TACKLE" homeVal={stats.home.recoveries_tackle} awayVal={stats.away.recoveries_tackle} />
+                            </div>
+                            <div className="t-box p-3 mb-4">
+                                <div className="text-xs font-black uppercase mb-3" style={{ borderBottom: '2px solid #000', paddingBottom: 4 }}>FOULS & DISCIPLINE</div>
+                                <CompactStat label="FOULS" homeVal={stats.home.fouls} awayVal={stats.away.fouls} />
+                            </div>
+                        </div>
+                    )}
+
+
+
+
+
+                    {activeTab === 'advanced' && (
+                        <div>
+                            <div className="t-box p-3 mb-4">
+                                <div className="text-xs font-black uppercase mb-3" style={{ borderBottom: '2px solid #000', paddingBottom: 4 }}>POSSESSION DYNAMICS</div>
+                                <CompactStat label="POSSESSION CHAINS" homeVal={stats.home.chains} awayVal={stats.away.chains} />
+                                <CompactStat label="AVG POSS. LENGTH" homeVal={stats.homePossLength.toFixed(1)} awayVal={stats.awayPossLength.toFixed(1)} />
+                                <CompactStat label="BUILD-UP SPEED" homeVal="-" awayVal="-" />
+                            </div>
+                            <div className="t-box p-3 mb-4">
+                                <div className="text-xs font-black uppercase mb-3" style={{ borderBottom: '2px solid #000', paddingBottom: 4 }}>ADVANCED PLAYMAKING</div>
+                                <CompactStat label="PROG. CARRIES" homeVal={stats.home.progressive_carries} awayVal={stats.away.progressive_carries} />
+                                <CompactStat label="EXPECTED THREAT (xT)" homeVal={stats.home.xt_generated.toFixed(2)} awayVal={stats.away.xt_generated.toFixed(2)} />
+                                <CompactStat label="POSSESSION VALUE" homeVal={stats.home.xt_generated.toFixed(2)} awayVal={stats.away.xt_generated.toFixed(2)} />
+                            </div>
+                            <div className="text-center text-[3px] text-muted font-bold mt-2 px-2 leading-normal uppercase">
+                                * Build-up speed tracks physical tracking markers omitted from standard tags.<br />
+                                * xT / Possession Value: Measures scoring probability gained via movements.
+                            </div>
+                        </div>
                     )}
 
                     {activeTab === 'heatmap' && (
-                        <div className="t-box t-shadow p-3">
-                            <div className="text-xs font-black uppercase tracking-widest text-muted mb-3">ACTION HEATMAPS</div>
-                            <Heatmap events={events} match={match} teamId={match.team_a_id} teamName={teamAName} color="var(--red)" />
-                            <div style={{ height: 16 }}></div>
-                            <Heatmap events={events} match={match} teamId={match.team_b_id} teamName={teamBName} color="var(--blue)" />
+                        <div>
+                            <div className="flex gap-2 mb-4">
+                                <button
+                                    className={`flex-1 py-2 text-xs font-black uppercase tracking-widest border-2 border-black ${!showEndHeatmap ? 'bg-black text-white' : 'bg-white text-black'}`}
+                                    onClick={() => setShowEndHeatmap(false)}
+                                    style={{ cursor: 'pointer' }}
+                                >
+                                    Start Locations
+                                </button>
+                                <button
+                                    className={`flex-1 py-2 text-xs font-black uppercase tracking-widest border-2 border-black ${showEndHeatmap ? 'bg-black text-white' : 'bg-white text-black'}`}
+                                    onClick={() => setShowEndHeatmap(true)}
+                                    style={{ cursor: 'pointer' }}
+                                >
+                                    End Locations
+                                </button>
+                            </div>
+
+                            <FilteredHeatmap events={events} match={match} teamId={match.team_a_id} teamName={teamAName} color="var(--red)" isEndLocation={showEndHeatmap} />
+                            <FilteredHeatmap events={events} match={match} teamId={match.team_b_id} teamName={teamBName} color="var(--blue)" isEndLocation={showEndHeatmap} />
                         </div>
-                    )}
-
-                    {activeTab === 'timeline' && (
-                        <KeyTimeline keyEvents={stats.keyEvents} match={match} />
-                    )}
-
-                    {activeTab === 'players' && (
-                        <PlayerTable keyEvents={stats.keyEvents} match={match} />
                     )}
                 </div>
             );
@@ -1075,8 +1775,8 @@
                         <a href="https://pp33.carrd.co" target="_blank" rel="noopener noreferrer"
                             className="text-xs font-bold uppercase tracking-tight px-2 py-1"
                             style={{ border: '1px solid #000', textDecoration: 'none', color: '#000', transition: 'all 0.15s' }}
-                            onMouseOver={e => { e.target.style.background='#000'; e.target.style.color='#fff'; }}
-                            onMouseOut={e => { e.target.style.background='transparent'; e.target.style.color='#000'; }}>
+                            onMouseOver={e => { e.target.style.background = '#000'; e.target.style.color = '#fff'; }}
+                            onMouseOut={e => { e.target.style.background = 'transparent'; e.target.style.color = '#000'; }}>
                             Made by PP33
                         </a>
                     </header>
@@ -1105,4 +1805,5 @@
         root.render(<App />);
     </script>
 </body>
+
 </html>
