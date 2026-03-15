@@ -7,7 +7,7 @@ import { Clock, Pause, RotateCcw, X } from 'lucide-react';
 // =============================================
 const JERSEY_HEX = {
   red: '#dc2626', blue: '#2563eb', green: '#16a34a',
-  yellow: '#eab308', black: '#1a1a1a', white: '#f5f5f5', orange: '#ea580c',
+  yellow: '#eab308', black: '#1a1a1a', white: '#f5f5f5', orange: '#ea580c', teal: '#0d9488',
 };
 
 const ACTIONS = ['Pass', 'Pass Received', 'Shot', 'Tackle', 'Carry', 'Dribble', 'Own Goal'];

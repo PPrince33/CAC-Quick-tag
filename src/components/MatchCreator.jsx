@@ -10,6 +10,7 @@ const JERSEY_COLORS = [
   { name: 'black', hex: '#1a1a1a' },
   { name: 'white', hex: '#f5f5f5' },
   { name: 'orange', hex: '#ea580c' },
+  { name: 'teal', hex: '#0d9488' },
 ];
 
 export default function MatchCreator() {

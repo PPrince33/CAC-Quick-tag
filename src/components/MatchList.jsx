@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { Play, Edit3, Eye, List, Trash2, RotateCcw, CheckSquare, Square, Lock, Save, X } from 'lucide-react';
+import { Play, Edit3, Eye, List, Trash2, RotateCcw, CheckSquare, Square, Lock, Save, X, Users } from 'lucide-react';
 
 export default function MatchList({ onStartMatch, onEditMatch, onResumeMatch }) {
   const [matches, setMatches] = useState([]);
@@ -20,6 +20,12 @@ export default function MatchList({ onStartMatch, onEditMatch, onResumeMatch }) 
   const [editMatch, setEditMatch] = useState(null);
   const [scoreForm, setScoreForm] = useState({ team_a_score: '', team_b_score: '', notes: '' });
   const [saving, setSaving] = useState(false);
+  
+  // Lineup management
+  const [lineupMatch, setLineupMatch] = useState(null);
+  const [lineupText, setLineupText] = useState('');
+  const [importingLineup, setImportingLineup] = useState(false);
+  const [lineupCounts, setLineupCounts] = useState({});
 
   const fetchData = async () => {
     const { data: m } = await supabase.from('matches')
@@ -27,6 +33,15 @@ export default function MatchList({ onStartMatch, onEditMatch, onResumeMatch }) 
       .order('start_time', { ascending: false });
     setMatches(m || []);
     setLoading(false);
+
+    // Fetch lineup counts
+    const { data: lu } = await supabase.from('lineups').select('match_id, team_id');
+    const counts = {};
+    lu?.forEach(l => {
+        const key = `${l.match_id}-${l.team_id}`;
+        counts[key] = (counts[key] || 0) + 1;
+    });
+    setLineupCounts(counts);
   };
 
   useEffect(() => { fetchData(); }, []);
@@ -131,6 +146,62 @@ export default function MatchList({ onStartMatch, onEditMatch, onResumeMatch }) 
     }).eq('id', editMatch.id);
     setSaving(false);
     setEditMatch(null);
+    fetchData();
+  };
+
+  const openLineupEdit = (m) => {
+    setLineupMatch(m);
+    setLineupText('');
+  };
+
+  const saveLineup = async () => {
+    if (!lineupText.trim()) return;
+    setImportingLineup(true);
+
+    const lines = lineupText.split('\n').filter(l => l.trim());
+    const newRecords = [];
+
+    for (const line of lines) {
+        // Try to parse: Team [Tab/Space] Name [Tab/Space] Number
+        const parts = line.split(/[\t]+| {2,}/).map(p => p.trim());
+        if (parts.length < 2) continue;
+
+        let [teamLabel, name, number] = parts;
+        // If only 2 parts, maybe team and name, or name and number?
+        // Let's assume the user follows the format: Team | Name | Number
+        
+        let teamId = null;
+        const lowTeam = teamLabel.toLowerCase();
+        if (lowTeam.includes('home') || lowTeam.includes(lineupMatch.team_a?.name.toLowerCase())) {
+            teamId = lineupMatch.team_a_id;
+        } else if (lowTeam.includes('away') || lowTeam.includes(lineupMatch.team_b?.name.toLowerCase())) {
+            teamId = lineupMatch.team_b_id;
+        }
+
+        if (teamId) {
+            newRecords.push({
+                match_id: lineupMatch.id,
+                team_id: teamId,
+                player_name: name,
+                jersey_number: number || null,
+                is_starting: true
+            });
+        }
+    }
+
+    if (newRecords.length > 0) {
+        // Delete existing lineup for this match? 
+        // The user said "add lineup data", usually implies replacement or append.
+        // Let's replace for the teams identified in the paste.
+        const teamIds = [...new Set(newRecords.map(r => r.team_id))];
+        for (const tid of teamIds) {
+            await supabase.from('lineups').delete().eq('match_id', lineupMatch.id).eq('team_id', tid);
+        }
+        await supabase.from('lineups').insert(newRecords);
+    }
+
+    setImportingLineup(false);
+    setLineupMatch(null);
     fetchData();
   };
 
@@ -299,6 +370,40 @@ export default function MatchList({ onStartMatch, onEditMatch, onResumeMatch }) 
         </div>
       )}
 
+      {/* Lineup Import Modal */}
+      {lineupMatch && (
+        <div className="modal-overlay">
+          <div className="modal" style={{ maxWidth: '600px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h3 style={{ marginBottom: 0 }}>Import Lineup Data</h3>
+              <button className="btn btn-sm btn-ghost" onClick={() => setLineupMatch(null)}><X size={14} /></button>
+            </div>
+
+            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
+              Paste your lineup table below. Format: <strong>Team [Tab] Name [Tab] Number</strong>.<br/>
+              Use "Home" or "{lineupMatch.team_a?.name}" for Team A, "Away" or "{lineupMatch.team_b?.name}" for Team B.
+            </p>
+
+            <div className="form-group">
+              <textarea
+                className="form-input"
+                placeholder={`Home  John Doe  10\nHome  Jane Smith  7\nAway  Bob Brown  1`}
+                value={lineupText}
+                onChange={e => setLineupText(e.target.value)}
+                style={{ minHeight: '240px', fontFamily: 'var(--font-mono)', fontSize: '12px' }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
+              <button className="btn btn-ghost flex-1" onClick={() => setLineupMatch(null)}>Cancel</button>
+              <button className="btn btn-primary flex-1" onClick={saveLineup} disabled={importingLineup || !lineupText.trim()}>
+                <Save size={16} /> {importingLineup ? 'Importing...' : 'Import Lineup'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="card">
         {loading ? (
           <div className="empty-state"><p>Loading matches...</p></div>
@@ -402,6 +507,12 @@ export default function MatchList({ onStartMatch, onEditMatch, onResumeMatch }) 
                         )}
                         <button className="btn btn-sm btn-ghost" onClick={() => openScoreEdit(m)} title="Score & Notes">
                           🏆
+                        </button>
+                        <button className="btn btn-sm btn-ghost" onClick={() => openLineupEdit(m)} title="Manage Lineup" style={{ color: (lineupCounts[`${m.id}-${m.team_a_id}`] || lineupCounts[`${m.id}-${m.team_b_id}`]) ? 'var(--success)' : 'var(--text-muted)' }}>
+                          <Users size={14} />
+                          { (lineupCounts[`${m.id}-${m.team_a_id}`] || 0) + (lineupCounts[`${m.id}-${m.team_b_id}`] || 0) > 0 && 
+                            <span style={{ fontSize: '10px', marginLeft: '4px' }}>{(lineupCounts[`${m.id}-${m.team_a_id}`] || 0) + (lineupCounts[`${m.id}-${m.team_b_id}`] || 0)}</span>
+                          }
                         </button>
                         {(m.status === 'Live' || m.status === 'Finished' || m.status === 'Published') && (
                           <button className="btn btn-sm btn-ghost" onClick={() => onEditMatch(m)}>
